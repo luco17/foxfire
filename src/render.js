@@ -322,6 +322,7 @@ export class GameRenderer {
     const player = bullet.owner === 'player';
     ctx.save(); ctx.translate(bullet.x, bullet.y); ctx.rotate(Math.atan2(bullet.vy, bullet.vx));
     if (settings.bigBullets) {
+      ctx.scale(1.4, 1.4);
       ctx.fillStyle = player ? '#f1c27945' : '#e3976d55'; ctx.fillRect(-24, -3, 27, 6);
       ellipse(ctx, 0, 0, player ? 9 : 7, player ? 4.5 : 5, player ? '#ffe6a3' : '#f4b28c');
       ellipse(ctx, 2, 0, 4, 2.2, '#fff6d2');
