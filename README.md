@@ -18,18 +18,27 @@ npm test
 
 See [verification notes](docs/verification.md) for the checks run and the remaining testing limits.
 
-The game is designed for a desktop browser with a keyboard and mouse. The controls reflow on a narrow screen, but this prototype has no touch movement controls. Serve the files over HTTP; opening `index.html` directly as a file will not load its JavaScript modules in most browsers.
+The game is designed for a laptop or desktop browser. **No mouse is needed:** press Enter to start, then use WASD or the arrow keys. The controls reflow on a narrow screen, but this prototype has no touch movement controls. Serve the files over HTTP; opening `index.html` directly as a file will not load its JavaScript modules in most browsers.
 
 ## Play and compare
 
 | Control | Action |
 | --- | --- |
 | WASD or arrow keys | Move |
-| Mouse | Aim |
-| Hold left click or Space | Shoot |
+| Enter | Start, resume or try again after defeat |
 | P or Escape | Pause / resume |
 | R | Restart with the same seed |
 | Demo | Start a fresh run with automatic movement and aiming; click again to take control |
+
+Choose a control mode above the arena:
+
+| Mode | Aiming and shooting |
+| --- | --- |
+| **Move only — default** | The fox aims and fires at the nearest living enemy. You only move. |
+| Move + Space | The fox aims automatically. Hold Space to fire; release it to stop. |
+| Mouse aim | Aim with the mouse. Hold left click or Space to fire. |
+
+The two automatic aiming modes ignore the trackpad. A small ring marks the current target. Aim assistance never moves the fox; Demo is the separate autopilot for comparing effects. Changing a mode returns keyboard focus to the arena. Juice presets do not change your control mode.
 
 Hunters wear green and fire slow rounds after a visible warning. Hounds chase. You have five health points. Avoid contact and bullets; survive and score takedowns. There is one open arena, one weapon and no campaign, upgrades, multiplayer or save system.
 
@@ -44,12 +53,13 @@ Sound starts only after a user action. The sound checkbox also mutes immediately
 | File | Responsibility |
 | --- | --- |
 | `src/game.js` | Seeded simulation, movement, enemies, swept bullet collisions, health and score |
+| `src/controls.js` | Automatic targeting and the three player control modes; no DOM or combat mutation |
 | `src/main.js` | Input, fixed-step scheduling, presets, pause/restart and DOM controls |
 | `src/render.js` | Canvas characters, camera, particles and aftermath; separate visual randomness |
 | `src/audio.js` | Synthesised Web Audio effects; no downloaded sound assets |
 | `src/settings.js` | Effect descriptions, groups, presets and video timestamps |
 | `scripts/serve.mjs` | Local development server, bound only to this computer |
-| `test/` | Simulation and settings tests using Node’s built-in test runner |
+| `test/` | Simulation, controls and settings tests using Node’s built-in test runner |
 
 The simulation runs at 120 fixed steps per second; rendering follows the display. A hit pause suspends simulation without blocking the browser. Defeat slowdown stretches the visual aftermath. The baseline game still has health and a defeat state. Larger bullet drawings keep their original hitboxes; death bursts do not deal extra damage. Arrays for enemies, particles, bodies, casings and audio voices are bounded.
 

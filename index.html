@@ -22,17 +22,27 @@
           <div class="arena-name"><span class="status-dot" aria-hidden="true"></span><span>THE CLEARING</span><span class="separator">/</span><span id="mode-label">BARE</span></div>
           <div class="toolbar-actions"><button id="demo" type="button" aria-pressed="false">Demo</button><button id="pause" type="button" disabled>Pause <kbd>P</kbd></button><button id="restart" type="button">Restart <kbd>R</kbd></button></div>
         </header>
+        <div class="control-bar">
+          <label for="control-mode">Controls</label>
+          <select id="control-mode" aria-describedby="control-explanation">
+            <option value="auto">Move only</option>
+            <option value="space">Move + Space</option>
+            <option value="mouse">Mouse aim</option>
+          </select>
+          <span id="control-note">Auto aim + fire</span>
+          <span id="control-explanation" class="sr-only">The fox aims and fires at the nearest enemy. You only move.</span>
+        </div>
         <div class="stage" id="stage">
-          <canvas id="game" width="1440" height="900" tabindex="0" aria-label="Game arena. Move with W A S D or arrow keys. Aim with the mouse; hold the left mouse button to fire. P pauses; R restarts." aria-describedby="controls">
-            Foxfire requires a browser with Canvas support. Move with WASD, aim with the mouse and hold the left mouse button to fire.
+          <canvas id="game" width="1440" height="900" tabindex="0" data-controls="auto" aria-label="Game arena. Move with W A S D or arrow keys. Aiming and firing are automatic. Enter starts or restarts. P pauses. R restarts." aria-describedby="controls">
+            Foxfire requires a browser with Canvas support. Move with WASD or the arrow keys. Aiming and firing are automatic.
           </canvas>
           <div class="stage-overlay" id="overlay">
             <div class="start-card">
               <p class="eyebrow" id="overlay-eyebrow">ONE FOX. AN UNFAIR FIGHT.</p>
               <h2 id="overlay-title">Turn the tables.</h2>
               <p id="overlay-description">Hunters have entered the clearing.<br>Keep moving. Give them a reason to leave.</p>
-              <button class="primary" id="start" type="button">Enter the clearing <span aria-hidden="true">→</span></button>
-              <p class="overlay-hint" id="overlay-hint">Start bare. Add juice. Feel the difference.</p>
+              <button class="primary" id="start" type="button" autofocus>Press Enter to play <span aria-hidden="true">→</span></button>
+              <p class="overlay-hint" id="overlay-hint">Just move with WASD or the arrow keys. No mouse needed.</p>
             </div>
           </div>
         </div>
@@ -43,14 +53,14 @@
           <div><span class="stat-label">SHOTS</span><span id="shots">0</span></div>
         </div>
         <footer class="play-footer" id="controls">
-          <p><kbd>WASD</kbd> / <kbd>↑↓←→</kbd> move <span>·</span> Mouse aim <span>·</span> Hold click to shoot</p>
+          <p><kbd>WASD</kbd> / <kbd>↑↓←→</kbd> move <span>·</span> <span id="shoot-hint">Aiming and shooting are automatic</span></p>
           <p class="technical"><span id="fps">— FPS</span><span>·</span><span id="enemy-count">3 enemies</span><span>·</span><span id="seed-label">Seed 1337</span></p>
         </footer>
         <p class="comparison-note">Same clearing. Same starting seed. Restart after a change for a fair comparison.</p>
         <details class="about">
           <summary>What am I comparing?</summary>
           <p><strong>Bare</strong> is the complete game with optional effects off. <strong>Juiced</strong> adds presentation only. <strong>Overdrive</strong> also changes weapons, enemies and timing. Try switching just one effect while paused. <strong>Demo</strong> starts a fresh run with automatic movement and aiming so you can concentrate on the effects.</p>
-          <p>Hunters wear green and shoot slow, telegraphed rounds. Hounds run straight at you. The fox is orange. This is a desktop keyboard-and-mouse prototype, with no accounts, installations or external game assets.</p>
+          <p>Hunters wear green and shoot slow, telegraphed rounds. Hounds run straight at you. The fox is orange. By default you only move: the fox aims and fires automatically. Choose <strong>Move + Space</strong> to control when to fire, or <strong>Mouse aim</strong> for the original controls. Enter starts or restarts; no mouse is needed to play.</p>
           <p>The video demonstrates a platform shooter. This version adapts its ideas to an almost top-down arena; it does not reproduce every trick. Death bursts are visual only, and the larger bullets keep their original hitboxes.</p>
         </details>
         <p class="sr-only" role="status" id="announcement">Ready to play. All optional effects are off.</p>

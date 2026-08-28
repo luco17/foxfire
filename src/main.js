@@ -1,6 +1,7 @@
 import { createGame, stepGame, FIXED_STEP, WORLD } from './game.js';
 import { GameRenderer } from './render.js';
 import { GameAudio } from './audio.js';
+import { getAutoAim, getPlayerInput } from './controls.js';
 import { EFFECTS, GROUPS, MOTION_EFFECTS, preset, presetName, referenceTime } from './settings.js';
 
 const byId = id => document.getElementById(id);
@@ -12,6 +13,8 @@ let game = createGame(SEED);
 let settings = preset('bare');
 let mode = 'ready';
 let demo = false;
+let controlMode = 'auto';
+let fireTap = false;
 let accumulator = 0;
 let hitPause = 0;
 let endingTime = 0;
@@ -22,7 +25,7 @@ let fpsTime = 0;
 let fpsFrames = 0;
 const keys = new Set();
 const pointer = { down: false, tap: false, known: false, x: 0, y: 0 };
-const input = { moveX: 0, moveY: 0, aimX: game.player.x + 160, aimY: game.player.y, shoot: false };
+const input = { moveX: 0, moveY: 0, aimX: game.player.x + 160, aimY: game.player.y, shoot: false, targetId: null, manualAim: false };
 const checkboxes = new Map();
 
 for (const group of GROUPS) {
@@ -83,7 +86,7 @@ function updateAudioStatus() {
     : audio.state === 'unavailable' ? 'Audio unavailable in this browser'
     : mode === 'paused' ? 'Sound paused'
     : audio.state === 'running' ? 'Sound ready'
-    : 'Press Start or click the arena to enable sound';
+    : 'Press Enter to start, or toggle Sound effects to enable audio';
 }
 
 function unlockAudio() {
@@ -140,10 +143,35 @@ byId('volume').addEventListener('input', event => {
 
 function clearInput() {
   keys.clear();
+  fireTap = false;
   pointer.down = false;
   pointer.tap = false;
+  pointer.known = false;
   input.shoot = false;
 }
+
+function updateControls() {
+  const descriptions = {
+    auto: { short: 'Auto aim + fire', hint: 'Aiming and shooting are automatic', detail: 'The fox aims and fires at the nearest enemy. You only move.', canvas: 'Aiming and firing are automatic.' },
+    space: { short: 'Auto aim · hold Space', hint: 'Auto aim · hold Space to shoot', detail: 'The fox aims at the nearest enemy. Hold Space to fire.', canvas: 'Aiming is automatic. Hold Space to fire.' },
+    mouse: { short: 'Mouse aim · hold click', hint: 'Mouse aim · hold click or Space to shoot', detail: 'Aim with the mouse. Hold left click or Space to fire.', canvas: 'Aim with the mouse. Hold left click or Space to fire.' }
+  };
+  const selected = descriptions[controlMode];
+  canvas.dataset.controls = controlMode;
+  canvas.setAttribute('aria-label', `Game arena. Move with W A S D or arrow keys. ${selected.canvas} Enter starts or restarts. P pauses. R restarts.`);
+  byId('control-note').textContent = selected.short;
+  byId('control-explanation').textContent = selected.detail;
+  byId('shoot-hint').textContent = selected.hint;
+  if (mode === 'ready') byId('overlay-hint').textContent = controlMode === 'auto' ? 'Just move with WASD or the arrow keys. No mouse needed.' : selected.detail;
+}
+
+byId('control-mode').addEventListener('change', event => {
+  controlMode = event.target.value;
+  clearInput();
+  updateControls();
+  announce(byId('control-explanation').textContent);
+  canvas.focus({ preventScroll: true });
+});
 
 function setMode(next) {
   mode = next;
@@ -156,7 +184,7 @@ function setMode(next) {
     byId('overlay-title').textContent = 'Paused.';
     byId('overlay-description').textContent = 'Change a switch. Compare the frame. Then get back out there.';
     byId('start').textContent = 'Resume →';
-    byId('overlay-hint').textContent = 'Press P or Escape to resume.';
+    byId('overlay-hint').textContent = 'Press Enter, P or Escape to resume.';
     audio.setEnabled(false);
     announce('Game paused.');
   } else if (mode === 'over') {
@@ -164,11 +192,11 @@ function setMode(next) {
     byId('overlay-title').textContent = 'Outfoxed.';
     byId('overlay-description').textContent = `${game.kills} takedown${game.kills === 1 ? '' : 's'}. ${formatTime(game.time)} in the clearing.`;
     byId('start').textContent = demo ? 'Run the demo again →' : 'Try again →';
-    byId('overlay-hint').textContent = 'Same seed, fresh start. Try a different mix.';
+    byId('overlay-hint').textContent = 'Press Enter to try again. Same seed, fresh start.';
     announce(`Game over. ${game.kills} takedowns in ${formatTime(game.time)}.`);
   } else if (mode === 'playing') {
     audio.setEnabled(settings.sound);
-    announce(demo ? 'Demo running. You can change effects while it plays.' : 'Game started.');
+    announce(demo ? 'Demo running. You can change effects while it plays.' : `Game started. ${byId('control-explanation').textContent}`);
   }
   updateAudioStatus();
 }
@@ -212,15 +240,19 @@ byId('demo').addEventListener('click', () => {
 });
 
 canvas.addEventListener('pointermove', event => {
-  pointer.x = event.clientX; pointer.y = event.clientY; pointer.known = true;
+  if (controlMode === 'mouse' && !demo) {
+    pointer.x = event.clientX; pointer.y = event.clientY; pointer.known = true;
+  }
 });
 canvas.addEventListener('pointerdown', event => {
   if (event.button !== 0 || mode !== 'playing') return;
   event.preventDefault();
   canvas.focus({ preventScroll: true });
-  canvas.setPointerCapture(event.pointerId);
-  pointer.x = event.clientX; pointer.y = event.clientY; pointer.known = true;
-  pointer.down = true; pointer.tap = true;
+  if (controlMode === 'mouse' && !demo) {
+    canvas.setPointerCapture(event.pointerId);
+    pointer.x = event.clientX; pointer.y = event.clientY; pointer.known = true;
+    pointer.down = true; pointer.tap = true;
+  }
   unlockAudio();
 });
 window.addEventListener('pointerup', () => { pointer.down = false; });
@@ -230,8 +262,11 @@ canvas.addEventListener('contextmenu', event => event.preventDefault());
 
 const movementKeys = ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight', 'Space'];
 document.addEventListener('keydown', event => {
-  if (event.metaKey || event.ctrlKey || event.altKey || event.target.closest('textarea, [contenteditable="true"], input:not([type="checkbox"]):not([type="range"])')) return;
-  if (event.code === 'KeyP' || event.code === 'Escape') {
+  if (event.metaKey || event.ctrlKey || event.altKey || event.target.closest('textarea, select, [contenteditable="true"], input:not([type="checkbox"]):not([type="range"])')) return;
+  if (event.code === 'Enter' && !event.target.closest('input, button, summary, a') && ['ready', 'paused', 'over'].includes(mode)) {
+    event.preventDefault();
+    if (!event.repeat) mode === 'paused' ? togglePause() : startRun();
+  } else if (event.code === 'KeyP' || event.code === 'Escape') {
     event.preventDefault();
     if (!event.repeat) togglePause();
   } else if (event.code === 'KeyR') {
@@ -240,6 +275,7 @@ document.addEventListener('keydown', event => {
   } else if (movementKeys.includes(event.code) && mode === 'playing' && !event.target.closest('input, button, summary, a, select')) {
     event.preventDefault();
     keys.add(event.code);
+    if (event.code === 'Space' && !event.repeat) fireTap = true;
   }
 });
 document.addEventListener('keyup', event => keys.delete(event.code));
@@ -255,26 +291,19 @@ function readInput() {
     const distance = Math.hypot(targetX - game.player.x, targetY - game.player.y);
     input.moveX = distance > 7 ? (targetX - game.player.x) / Math.max(1, distance) : 0;
     input.moveY = distance > 7 ? (targetY - game.player.y) / Math.max(1, distance) : 0;
-    let closest = null;
-    let nearest = Infinity;
-    for (const enemy of game.enemies) {
-      const range = Math.hypot(enemy.x - game.player.x, enemy.y - game.player.y);
-      if (range < nearest) { closest = enemy; nearest = range; }
-    }
-    if (closest) {
-      const lead = nearest / (settings.fastBullets ? 1100 : 620) * .7;
-      input.aimX = closest.x + closest.vx * lead;
-      input.aimY = closest.y + closest.vy * lead;
-    }
-    input.shoot = Boolean(closest);
+    const target = getAutoAim(game, settings);
+    if (target) Object.assign(input, target);
+    input.targetId = target?.targetId ?? null;
+    input.manualAim = false;
+    input.shoot = Boolean(target);
   } else {
-    input.moveX = Number(keys.has('KeyD') || keys.has('ArrowRight')) - Number(keys.has('KeyA') || keys.has('ArrowLeft'));
-    input.moveY = Number(keys.has('KeyS') || keys.has('ArrowDown')) - Number(keys.has('KeyW') || keys.has('ArrowUp'));
-    if (pointer.known) {
-      const point = renderer.screenToWorld(pointer.x, pointer.y);
-      input.aimX = point.x; input.aimY = point.y;
-    }
-    input.shoot = pointer.down || pointer.tap || keys.has('Space');
+    Object.assign(input, getPlayerInput(game, {
+      mode: controlMode,
+      moveX: Number(keys.has('KeyD') || keys.has('ArrowRight')) - Number(keys.has('KeyA') || keys.has('ArrowLeft')),
+      moveY: Number(keys.has('KeyS') || keys.has('ArrowDown')) - Number(keys.has('KeyW') || keys.has('ArrowUp')),
+      fire: keys.has('Space') || fireTap || (controlMode === 'mouse' && (pointer.down || pointer.tap)),
+      pointerAim: controlMode === 'mouse' && pointer.known ? renderer.screenToWorld(pointer.x, pointer.y) : null
+    }, settings));
   }
 }
 
@@ -301,6 +330,7 @@ function frame(now) {
       readInput();
       const events = stepGame(game, input, settings, FIXED_STEP);
       pointer.tap = false;
+      fireTap = false;
       renderer.consume(events, settings);
       audio.play(events, settings);
       accumulator -= FIXED_STEP;
@@ -326,6 +356,7 @@ function frame(now) {
 }
 
 applySettings();
+updateControls();
 setMode('ready');
 updateStats();
 requestAnimationFrame(frame);

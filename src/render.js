@@ -230,11 +230,13 @@ export class GameRenderer {
     for (const bullet of game.bullets) this.bullet(bullet, settings);
     for (const particle of this.particles) if (settings[particle.effect]) this.drawParticle(particle);
 
-    if (game.phase === 'playing') {
-      ctx.save(); ctx.translate(input.aimX, input.aimY); ctx.scale(1, 1 / SQUASH);
-      ctx.strokeStyle = '#f7ebcbaf'; ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.arc(0, 0, 6, 0, TAU);
-      for (const angle of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) { ctx.moveTo(Math.cos(angle) * 9, Math.sin(angle) * 9); ctx.lineTo(Math.cos(angle) * 13, Math.sin(angle) * 13); }
+    const target = input.manualAim ? null : game.enemies.find(enemy => enemy.id === input.targetId);
+    if (game.phase === 'playing' && (input.manualAim || target)) {
+      ctx.save(); ctx.translate(target ? target.x : input.aimX, target ? target.y : input.aimY); ctx.scale(1, 1 / SQUASH);
+      const radius = target ? target.radius + 7 : 6;
+      ctx.strokeStyle = target ? '#f6bd7590' : '#f7ebcbaf'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(0, 0, radius, 0, TAU);
+      for (const angle of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) { ctx.moveTo(Math.cos(angle) * (radius + 3), Math.sin(angle) * (radius + 3)); ctx.lineTo(Math.cos(angle) * (radius + 7), Math.sin(angle) * (radius + 7)); }
       ctx.stroke(); ctx.restore();
     }
     ctx.setTransform(1, 0, 0, 1, 0, 0);

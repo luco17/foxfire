@@ -8,6 +8,12 @@ The reference is Jan Willem Nijman’s [The art of screenshake, INDIGO Classes 2
 
 ## Controls and comparison
 
+**I1 — Laptop controls.** Move only is the default: WASD or arrow keys move the fox while it targets and fires at the nearest living enemy. Move + Space keeps automatic aiming but gives the player control over firing. Mouse aim remains optional. Enter starts, resumes and retries; P or Escape pauses and R restarts. These controls are independent of the juice switches.
+
+**I2 — Aim assistance.** [src/controls.js](../src/controls.js) chooses a target, leads its movement slightly and supplies ordinary aim/fire input to the simulation. It neither moves the fox nor changes damage, cooldowns or randomness. A ring identifies the current target. Only Demo controls movement automatically.
+
+**I3 — Other keyboard schemes.** Separate movement and firing keys (for example WASD plus arrow keys) allow deliberate directional fire, but need both hands. Firing along the movement direction uses fewer controls, but makes retreating while shooting awkward. Neither scheme is included in this first laptop version.
+
 [src/settings.js](../src/settings.js) defines the 27 switches, their descriptions and individual video links. Its groups deliberately separate presentation from changes to combat or timing.
 
 | Ref | Group | Implemented controls |
@@ -33,7 +39,7 @@ These trade-offs are engineering judgements for this prototype, supported by the
 
 ## Deliberate adaptations
 
-**A1 — Perspective.** The talk uses a platform shooter. Foxfire omits jumping, jump dust and its firing-direction strafing rule; independent movement and aiming suit the arena. Weapon lag is also omitted.
+**A1 — Perspective.** The talk uses a platform shooter. Foxfire omits jumping, jump dust and its firing-direction strafing rule. Movement remains independent of aiming, so the fox can retreat while firing. Automatic aiming makes that practical without a mouse. Weapon lag is also omitted.
 
 **A2 — Stable rules.** Enlarged bullets change appearance, not collision size. Death bursts cause no damage: the random explosions introduced at 23:41 are not reproduced as chain attacks. Player vulnerability and game over remain in Bare, although the talk adds them near 28:35.
 
