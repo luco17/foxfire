@@ -1,0 +1,13 @@
+{
+  "name": "foxfire",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A small fox shooter for experimenting with game feel.",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "dev": "node scripts/serve.mjs",
+    "start": "node scripts/serve.mjs",
+    "test": "node --test"
+  }
+}

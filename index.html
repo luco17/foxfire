@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#17211f">
+    <meta name="description" content="A small fox shooter. Start bare, then switch on the details that change how it feels.">
+    <title>Foxfire — a game-feel playground</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="./src/style.css">
+    <script type="module" src="./src/main.js"></script>
+  </head>
+  <body>
+    <header class="masthead">
+      <div class="identity"><span class="identity-mark" aria-hidden="true">F.</span><div><h1>FOXFIRE</h1><p>A game-feel playground</p></div></div>
+      <a href="https://www.youtube.com/watch?v=AJdEqssNZ-U" target="_blank" rel="noreferrer">Inspired by The Art of Screenshake <span aria-hidden="true">↗</span></a>
+    </header>
+
+    <main class="workspace">
+      <section class="play-area" aria-label="Foxfire shooter">
+        <header class="arena-toolbar">
+          <div class="arena-name"><span class="status-dot" aria-hidden="true"></span><span>THE CLEARING</span><span class="separator">/</span><span id="mode-label">BARE</span></div>
+          <div class="toolbar-actions"><button id="demo" type="button" aria-pressed="false">Demo</button><button id="pause" type="button" disabled>Pause <kbd>P</kbd></button><button id="restart" type="button">Restart <kbd>R</kbd></button></div>
+        </header>
+        <div class="stage" id="stage">
+          <canvas id="game" width="1440" height="900" tabindex="0" aria-label="Game arena. Move with W A S D or arrow keys. Aim with the mouse; hold the left mouse button to fire. P pauses; R restarts." aria-describedby="controls">
+            Foxfire requires a browser with Canvas support. Move with WASD, aim with the mouse and hold the left mouse button to fire.
+          </canvas>
+          <div class="stage-overlay" id="overlay">
+            <div class="start-card">
+              <p class="eyebrow" id="overlay-eyebrow">ONE FOX. AN UNFAIR FIGHT.</p>
+              <h2 id="overlay-title">Turn the tables.</h2>
+              <p id="overlay-description">Hunters have entered the clearing.<br>Keep moving. Give them a reason to leave.</p>
+              <button class="primary" id="start" type="button">Enter the clearing <span aria-hidden="true">→</span></button>
+              <p class="overlay-hint" id="overlay-hint">Start bare. Add juice. Feel the difference.</p>
+            </div>
+          </div>
+        </div>
+        <div class="scoreboard" aria-label="Run statistics">
+          <div><span class="stat-label">HEALTH</span><span id="health" class="health" aria-label="5 of 5 health">● ● ● ● ●</span></div>
+          <div><span class="stat-label">TAKEDOWNS</span><span id="kills">00</span></div>
+          <div><span class="stat-label">TIME</span><span id="time">0:00</span></div>
+          <div><span class="stat-label">SHOTS</span><span id="shots">0</span></div>
+        </div>
+        <footer class="play-footer" id="controls">
+          <p><kbd>WASD</kbd> / <kbd>↑↓←→</kbd> move <span>·</span> Mouse aim <span>·</span> Hold click to shoot</p>
+          <p class="technical"><span id="fps">— FPS</span><span>·</span><span id="enemy-count">3 enemies</span><span>·</span><span id="seed-label">Seed 1337</span></p>
+        </footer>
+        <p class="comparison-note">Same clearing. Same starting seed. Restart after a change for a fair comparison.</p>
+        <details class="about">
+          <summary>What am I comparing?</summary>
+          <p><strong>Bare</strong> is the complete game with optional effects off. <strong>Juiced</strong> adds presentation only. <strong>Overdrive</strong> also changes weapons, enemies and timing. Try switching just one effect while paused. <strong>Demo</strong> starts a fresh run with automatic movement and aiming so you can concentrate on the effects.</p>
+          <p>Hunters wear green and shoot slow, telegraphed rounds. Hounds run straight at you. The fox is orange. This is a desktop keyboard-and-mouse prototype, with no accounts, installations or external game assets.</p>
+          <p>The video demonstrates a platform shooter. This version adapts its ideas to an almost top-down arena; it does not reproduce every trick. Death bursts are visual only, and the larger bullets keep their original hitboxes.</p>
+        </details>
+        <p class="sr-only" role="status" id="announcement">Ready to play. All optional effects are off.</p>
+        <noscript>This game needs JavaScript. Please enable it to play.</noscript>
+      </section>
+
+      <aside class="juice-panel" aria-labelledby="juice-heading">
+        <header class="panel-header"><div><p class="eyebrow">THE EXPERIMENT</p><h2 id="juice-heading">Just add juice.</h2></div><span class="effect-count" id="effect-count">0 / 27</span></header>
+        <p class="panel-description">Switch on the details. Nothing needs a reload.</p>
+        <div class="presets" role="group" aria-label="Juice presets">
+          <button type="button" data-preset="bare" aria-pressed="true">Bare<span>the baseline</span></button>
+          <button type="button" data-preset="juiced" aria-pressed="false">Juiced<span>just the feel</span></button>
+          <button type="button" data-preset="overdrive" aria-pressed="false">Overdrive<span>turn it up</span></button>
+        </div>
+        <p id="preset-note" class="preset-note">All optional effects off. The full game still works.</p>
+        <div id="effect-groups" class="effect-groups"></div>
+        <section class="comfort" aria-label="Comfort settings">
+          <label class="comfort-choice"><input type="checkbox" id="reduced-motion"><span>Reduce camera motion</span></label>
+          <p>Disables camera movement and character bobbing, including in presets.</p>
+          <label class="volume-label" for="volume"><span>Sound level</span><span id="volume-value">25%</span></label>
+          <input id="volume" type="range" min="0" max="50" value="25" step="1">
+          <span id="audio-status" class="audio-status">Sound is off</span>
+        </section>
+        <footer class="panel-footer">Small changes. Same fox.<br><span>Canvas 2D · Web Audio · No dependencies</span></footer>
+      </aside>
+    </main>
+  </body>
+</html>
