@@ -8,11 +8,11 @@ The reference is Jan Willem Nijman’s [The art of screenshake, INDIGO Classes 2
 
 ## Controls and comparison
 
-**I1 — Laptop controls.** Move only is the default: WASD or arrow keys move the fox while it targets and fires at the nearest living enemy. Move + Space keeps automatic aiming but gives the player control over firing. Mouse aim remains optional. Enter starts, resumes and retries; P or Escape pauses and R restarts. These controls are independent of the juice switches.
+**I1 — Player controls.** WASD moves the fox, the mouse aims and holding the left mouse button fires. Releasing it stops firing. This is the only player scheme; it requires a keyboard and mouse. Enter starts, resumes and retries; P or Escape pauses and R restarts. These controls are independent of the juice switches.
 
-**I2 — Aim assistance.** [src/controls.js](../src/controls.js) chooses a target, leads its movement slightly and supplies ordinary aim/fire input to the simulation. It neither moves the fox nor changes damage, cooldowns or randomness. A ring identifies the current target. Only Demo controls movement automatically.
+**I2 — Manual aiming.** [src/controls.js](../src/controls.js) supplies player aim/fire input without selecting an enemy or firing automatically. [src/projection.js](../src/projection.js) maps the pointer onto the weapon's height in the tilted view. Aiming does not change damage, cooldowns or randomness.
 
-**I3 — Other keyboard schemes.** Separate movement and firing keys (for example WASD plus arrow keys) allow deliberate directional fire, but need both hands. Firing along the movement direction uses fewer controls, but makes retreating while shooting awkward. Neither scheme is included in this first laptop version.
+**I3 — Demo.** The separate autopilot moves, aims and fires through the same simulation. It selects the nearest living enemy and leads its movement slightly. A ring identifies its target. Demo exists to compare effects live; it is not a selectable player control scheme.
 
 **I4 — Arena and options.** The arena occupies the window, with a small toolbar and score display over it. The canvas keeps its proportions and shows the full playfield. Options lives in a native HTML dialog styled as a floating panel on the right; its contents scroll independently and opening it does not resize the game. J opens the panel. Close, Escape or a backdrop click dismisses it. Player runs pause while it is open and resume only if the panel caused the pause; Demo keeps playing for live comparisons. Native modal focus prevents game input from leaking through the controls.
 
@@ -41,7 +41,7 @@ These trade-offs are engineering judgements for this prototype, supported by the
 
 ## Deliberate adaptations
 
-**A1 — Perspective.** The talk uses a platform shooter. Foxfire omits jumping, jump dust and its firing-direction strafing rule. Movement remains independent of aiming, so the fox can retreat while firing. Automatic aiming makes that practical without a mouse. Weapon lag is also omitted.
+**A1 — Perspective.** The talk uses a platform shooter. Foxfire omits jumping, jump dust and its firing-direction strafing rule. Movement remains independent of aiming, so the fox can retreat while firing. Weapon lag is also omitted.
 
 **A2 — Stable rules.** Enlarged bullets change appearance, not collision size. Death bursts cause no damage: the random explosions introduced at 23:41 are not reproduced as chain attacks. Player vulnerability and game over remain in Bare, although the talk adds them near 28:35.
 
@@ -51,4 +51,4 @@ These trade-offs are engineering judgements for this prototype, supported by the
 
 **A5 — Tilted view.** The camera sits at a 45° elevation: “50% tilt” means halfway from straight overhead to ground level. Canvas draws an orthographic view of the flat arena, with height added to rounded character parts. This gives the fox a visible face and chest without an engine dependency. The full arena stays in view; no zoom or combat rules change. The fox has a curved, cream-tipped tail, an idle wag and a stronger running swish. Bare and reduced motion freeze those animations.
 
-**A6 — Shot alignment.** Weapons, bullets, muzzle flashes and impact sparks share one height above the ground. Mouse aiming inverts the projection on that same plane; screen shake and visual recoil stay out of the input transform. Shadows, targeting rings, casings and fallen enemies remain on the floor. Actors and bullets draw in ground-depth order, while particles remain visible over the scene. The art does not enlarge collision circles or add headshots.
+**A6 — Shot alignment.** Weapons, bullets, muzzle flashes and impact sparks share one height above the ground. Mouse aiming inverts the projection on that same plane; screen shake and visual recoil stay out of the input transform. Shadows, Demo targeting rings, casings and fallen enemies remain on the floor. Actors and bullets draw in ground-depth order, while particles remain visible over the scene. The art does not enlarge collision circles or add headshots.

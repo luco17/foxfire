@@ -20,7 +20,7 @@ npm test
 
 See [verification notes](docs/verification.md) for the checks run and the remaining testing limits.
 
-The game is designed for a laptop or desktop browser. **No mouse is needed:** press Enter to start, then use WASD or the arrow keys. The controls reflow on a narrow screen, but this prototype has no touch movement controls. Serve the files over HTTP; opening `index.html` directly as a file will not load its JavaScript modules in most browsers.
+The game is designed for a laptop or desktop browser with a keyboard and mouse. Press Enter to start. The interface reflows on a narrow screen, but this prototype has no touch movement controls. Serve the files over HTTP; opening `index.html` directly as a file will not load its JavaScript modules in most browsers.
 
 ## Publish with Cloudflare Pages
 
@@ -46,29 +46,23 @@ Once connected, pushes to `main` trigger production builds and deployments. **No
 
 | Control | Action |
 | --- | --- |
-| WASD or arrow keys | Move |
+| WASD | Move |
+| Mouse | Aim |
+| Hold left mouse button | Fire; release to stop |
 | Enter | Start, resume or try again after defeat |
 | P or Escape | Pause / resume |
 | R | Restart with the same seed |
-| Options / J | Open the effects and controls panel |
+| Options / J | Open the effects panel |
 | Escape with options open | Close the panel |
-| Demo | Start a fresh run with automatic movement and aiming; click again to take control |
+| Demo | Start a fresh run with automatic movement, aiming and firing; click again to take control |
 
 The arena fills the window, with a small toolbar and a compact score display. **Options** opens a floating panel; the arena keeps its size behind it. Opening the panel pauses a player run and closing it resumes that same run. A run you paused yourself stays paused. **Demo keeps running** while the panel is open so you can compare effects live.
 
-Choose a control mode in Options:
-
-| Mode | Aiming and shooting |
-| --- | --- |
-| **Move only — default** | The fox aims and fires at the nearest living enemy. You only move. |
-| Move + Space | The fox aims automatically. Hold Space to fire; release it to stop. |
-| Mouse aim | Aim with the mouse. Hold left click or Space to fire. |
-
-The two automatic aiming modes ignore the trackpad. A small ring marks the current target. Aim assistance never moves the fox; Demo is the separate autopilot for comparing effects. Focus stays inside Options while you adjust controls, then returns to the arena when you close it. Juice presets do not change your control mode.
+There is one player control scheme. Movement and aiming are independent, so you can retreat while firing. Demo is a separate autopilot for comparing effects. Focus stays inside Options while you adjust effects, then returns to the arena when you close it. Juice presets do not change the controls.
 
 Hunters wear green and fire slow rounds after a visible warning. Hounds chase. You have five health points. Avoid contact and bullets; survive and score takedowns. There is one open arena, one weapon and no campaign, upgrades, multiplayer or save system.
 
-The arena uses a **45° view**, halfway between overhead and ground level. Rounded characters have visible height, with a larger fox, pointed ears and a bushy cream-tipped tail. Character animation adds an idle wag, a stronger running swish and moving feet. The tilt is part of the baseline presentation: movement, targeting and collisions still use the same flat playfield.
+The arena uses a **45° view**, halfway between overhead and ground level. Rounded characters have visible height, with a larger fox, pointed ears and a bushy cream-tipped tail. Character animation adds an idle wag, a stronger running swish and moving feet. The tilt is part of the baseline presentation: movement, aiming and collisions still use the same flat playfield.
 
 **Bare** starts with all 27 optional effects off. **Juiced** enables presentation effects without changing the simulation's combat rules. **Overdrive** also enables the combat and timing experiments. Checkboxes work during play and pause; their time links open the relevant section of the video. Hover an effect label for its explanation.
 
@@ -81,7 +75,7 @@ Sound starts only after a user action. The sound checkbox also mutes immediately
 | File | Responsibility |
 | --- | --- |
 | `src/game.js` | Seeded simulation, movement, enemies, swept bullet collisions, health and score |
-| `src/controls.js` | Automatic targeting and the three player control modes; no DOM or combat mutation |
+| `src/controls.js` | Player aim/fire input and Demo targeting; no DOM or combat mutation |
 | `src/main.js` | Input, fixed-step scheduling, presets, pause/restart and DOM controls |
 | `src/render.js` | Scene composition, camera, particles and aftermath; separate visual randomness |
 | `src/actors.js` | Rounded character art, directional poses, tail animation and weapons |

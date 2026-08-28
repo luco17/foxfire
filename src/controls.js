@@ -1,4 +1,4 @@
-/** Pick the nearest living enemy; IDs make equal-distance ties stable. */
+/** Demo targeting: pick the nearest living enemy, with stable ID ties. */
 export function getAutoAim(game, settings = {}) {
   let target = null;
   let nearest = Infinity;
@@ -19,27 +19,15 @@ export function getAutoAim(game, settings = {}) {
   };
 }
 
-/** Aim assistance never moves the fox or changes combat state. */
-export function getPlayerInput(game, controls = {}, settings = {}) {
-  const mode = controls.mode === 'mouse' ? 'mouse' : controls.mode === 'space' ? 'space' : 'auto';
-  const manualAim = mode === 'mouse';
-  const target = manualAim ? null : getAutoAim(game, settings);
-  let aimX = game.player.x + Math.cos(game.player.angle) * 160;
-  let aimY = game.player.y + Math.sin(game.player.angle) * 160;
-  if (target) {
-    aimX = target.aimX;
-    aimY = target.aimY;
-  } else if (manualAim && controls.pointerAim) {
-    aimX = controls.pointerAim.x;
-    aimY = controls.pointerAim.y;
-  }
+/** Player movement, aiming and firing come only from explicit input. */
+export function getPlayerInput(game, controls = {}) {
   return {
     moveX: controls.moveX ?? 0,
     moveY: controls.moveY ?? 0,
-    aimX,
-    aimY,
-    shoot: game.phase === 'playing' && (mode === 'auto' ? target !== null : controls.fire === true),
-    targetId: target?.targetId ?? null,
-    manualAim,
+    aimX: controls.pointerAim?.x ?? game.player.x + Math.cos(game.player.angle) * 160,
+    aimY: controls.pointerAim?.y ?? game.player.y + Math.sin(game.player.angle) * 160,
+    shoot: game.phase === 'playing' && controls.fire === true,
+    targetId: null,
+    manualAim: true,
   };
 }
