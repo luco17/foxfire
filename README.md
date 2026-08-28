@@ -4,7 +4,7 @@ A small, almost top-down shooter: play a fox fighting hunters and hounds, then s
 
 ## Run
 
-Use Node.js 22 or newer. There are no dependencies to install and no build step.
+Use Node.js 22 or newer. There are no dependencies to install. Development runs directly from the source files; the build step below prepares files for publishing.
 
 ```sh
 npm run dev
@@ -19,6 +19,26 @@ npm test
 See [verification notes](docs/verification.md) for the checks run and the remaining testing limits.
 
 The game is designed for a laptop or desktop browser. **No mouse is needed:** press Enter to start, then use WASD or the arrow keys. The controls reflow on a narrow screen, but this prototype has no touch movement controls. Serve the files over HTTP; opening `index.html` directly as a file will not load its JavaScript modules in most browsers.
+
+## Publish with Cloudflare Pages
+
+```sh
+npm run build
+```
+
+This replaces `dist/` with `index.html` and the browser JavaScript and CSS from `src/`. Tests, documentation, package metadata and the development server are not copied. The build does not bundle or transform the game.
+
+Connect the GitHub repository through [Cloudflare Pages Git integration](https://developers.cloudflare.com/pages/get-started/git-integration/) and use these settings:
+
+| Setting | Value |
+| --- | --- |
+| Production branch | `main` |
+| Framework preset | None |
+| Build command | `npm run build` |
+| Build output directory | `dist` |
+| Root directory | Repository root; leave blank |
+
+Once connected, pushes to `main` trigger production builds and deployments. **Node.js is only development, test and build tooling.** The game runs entirely in the browser; Pages serves static files and needs no Node.js game server.
 
 ## Play and compare
 
@@ -67,8 +87,9 @@ Sound starts only after a user action. The sound checkbox also mutes immediately
 | `src/audio.js` | Synthesised Web Audio effects; no downloaded sound assets |
 | `src/settings.js` | Effect descriptions, groups, presets and video timestamps |
 | `scripts/serve.mjs` | Local development server, bound only to this computer |
+| `scripts/build.mjs` | Copies only the static game files into `dist/` for publishing |
 | `test/` | Simulation, controls, settings, projection and presentation tests using Node’s built-in test runner |
 
 The simulation runs at 120 fixed steps per second; rendering follows the display. A hit pause suspends simulation without blocking the browser. Defeat slowdown stretches the visual aftermath. The baseline game still has health and a defeat state. Larger bullet drawings keep their original hitboxes; death bursts do not deal extra damage. Arrays for enemies, particles, bodies, casings and audio voices are bounded.
 
-See [the design note](docs/design.md) for the video mapping, adaptations and comparison of JavaScript, Phaser, Godot, SpriteKit and Metal. This is a local Git repository; no remote repository or public deployment is created.
+See [the design note](docs/design.md) for the video mapping, adaptations and comparison of JavaScript, Phaser, Godot, SpriteKit and Metal.
