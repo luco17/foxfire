@@ -42,6 +42,8 @@ The two automatic aiming modes ignore the trackpad. A small ring marks the curre
 
 Hunters wear green and fire slow rounds after a visible warning. Hounds chase. You have five health points. Avoid contact and bullets; survive and score takedowns. There is one open arena, one weapon and no campaign, upgrades, multiplayer or save system.
 
+The arena uses a **45° view**, halfway between overhead and ground level. Rounded characters have visible height, with a larger fox, pointed ears and a bushy cream-tipped tail. Character animation adds an idle wag, a stronger running swish and moving feet. The tilt is part of the baseline presentation: movement, targeting and collisions still use the same flat playfield.
+
 **Bare** starts with all 27 optional effects off. **Juiced** enables presentation effects without changing the simulation's combat rules. **Overdrive** also enables the combat and timing experiments. Checkboxes work during play and pause; their time links open the relevant section of the video. Hover an effect label for its explanation.
 
 For a useful comparison, start Demo, try a preset, then restart. Every run starts from seed `1337`; the same inputs and combat options reproduce the same simulation. A camera change can change how a human chooses to aim, but particles and camera randomness never enter the combat simulation.
@@ -55,11 +57,13 @@ Sound starts only after a user action. The sound checkbox also mutes immediately
 | `src/game.js` | Seeded simulation, movement, enemies, swept bullet collisions, health and score |
 | `src/controls.js` | Automatic targeting and the three player control modes; no DOM or combat mutation |
 | `src/main.js` | Input, fixed-step scheduling, presets, pause/restart and DOM controls |
-| `src/render.js` | Canvas characters, camera, particles and aftermath; separate visual randomness |
+| `src/render.js` | Scene composition, camera, particles and aftermath; separate visual randomness |
+| `src/actors.js` | Rounded character art, directional poses, tail animation and weapons |
+| `src/projection.js` | Shared 45° projection and height-aware mouse aiming |
 | `src/audio.js` | Synthesised Web Audio effects; no downloaded sound assets |
 | `src/settings.js` | Effect descriptions, groups, presets and video timestamps |
 | `scripts/serve.mjs` | Local development server, bound only to this computer |
-| `test/` | Simulation, controls and settings tests using Node’s built-in test runner |
+| `test/` | Simulation, controls, settings, projection and presentation tests using Node’s built-in test runner |
 
 The simulation runs at 120 fixed steps per second; rendering follows the display. A hit pause suspends simulation without blocking the browser. Defeat slowdown stretches the visual aftermath. The baseline game still has health and a defeat state. Larger bullet drawings keep their original hitboxes; death bursts do not deal extra damage. Arrays for enemies, particles, bodies, casings and audio voices are bounded.
 

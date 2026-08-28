@@ -1,7 +1,7 @@
 import { WORLD } from './game.js';
+import { drawActor } from './actors.js';
+import { VIEW, GROUND_SCALE, HEIGHT_SCALE, SHOT_HEIGHT, viewToWorld, projectedAngle } from './projection.js';
 
-const VIEW = { width: 1440, height: 900 };
-const SQUASH = 0.82;
 const TAU = Math.PI * 2;
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
@@ -60,10 +60,10 @@ export class GameRenderer {
   screenToWorld(clientX, clientY) {
     const rect = this.canvas.getBoundingClientRect();
     // Shake and recoil are deliberately absent from the aiming transform.
-    return {
-      x: (clientX - rect.left) / rect.width * VIEW.width - VIEW.width / 2 + this.camera.x,
-      y: ((clientY - rect.top) / rect.height * VIEW.height - VIEW.height / 2) / SQUASH + this.camera.y
-    };
+    return viewToWorld({
+      x: (clientX - rect.left) / rect.width * VIEW.width,
+      y: (clientY - rect.top) / rect.height * VIEW.height
+    }, this.camera, SHOT_HEIGHT);
   }
 
   makeGround() {
@@ -123,7 +123,7 @@ export class GameRenderer {
 
   particle(particle) {
     if (this.particles.length >= 650) this.particles.shift();
-    this.particles.push({ vx: 0, vy: 0, size: 3, colour: '#f5d696', ...particle, maxLife: particle.life });
+    this.particles.push({ z: SHOT_HEIGHT, vx: 0, vy: 0, vz: 0, size: 3, colour: '#f5d696', ...particle, maxLife: particle.life });
   }
 
   sparks(event, count) {
@@ -160,9 +160,9 @@ export class GameRenderer {
       if (event.type === 'death') {
         this.corpses.push({ ...event, angle: event.angle + .5 });
         if (this.corpses.length > 100) this.corpses.shift();
-        if (settings.bursts) this.particle({ kind: 'ring', effect: 'bursts', x: event.x, y: event.y, life: .32, size: 75 });
+        if (settings.bursts) this.particle({ kind: 'ring', effect: 'bursts', x: event.x, y: event.y, z: 0, life: .32, size: 75 });
         if (settings.smoke) {
-          for (let i = 0; i < 5; i++) this.particle({ kind: 'smoke', effect: 'smoke', x: event.x + (this.random() - .5) * 18, y: event.y, vx: (this.random() - .5) * 22, vy: -15 - this.random() * 15, life: 1.1 + this.random() * 1.2, size: 9 + this.random() * 9, colour: '#bac0a6' });
+          for (let i = 0; i < 5; i++) this.particle({ kind: 'smoke', effect: 'smoke', x: event.x + (this.random() - .5) * 18, y: event.y, z: 8, vx: (this.random() - .5) * 22, vz: 20 + this.random() * 20, life: 1.1 + this.random() * 1.2, size: 9 + this.random() * 9, colour: '#bac0a6' });
         }
       }
       if (event.type === 'gameover') {
@@ -193,6 +193,7 @@ export class GameRenderer {
       particle.life -= dt;
       particle.x += particle.vx * dt;
       particle.y += particle.vy * dt;
+      particle.z += particle.vz * dt;
       if (particle.kind === 'spark') { particle.vx *= Math.exp(-6 * dt); particle.vy *= Math.exp(-6 * dt); }
     }
     this.particles = this.particles.filter(particle => particle.life > 0);
@@ -207,8 +208,8 @@ export class GameRenderer {
     // Deterministic oscillation makes a paused frame stable and avoids input jitter.
     const shakeX = settings.shake ? Math.sin(this.fxTime * 157) * this.shake : 0;
     const shakeY = settings.shake ? Math.cos(this.fxTime * 193) * this.shake : 0;
-    ctx.translate(VIEW.width / 2 - this.camera.x + shakeX + (settings.cameraKick ? this.kick.x : 0), VIEW.height / 2 - this.camera.y * SQUASH + shakeY + (settings.cameraKick ? this.kick.y : 0));
-    ctx.scale(1, SQUASH);
+    ctx.translate(VIEW.width / 2 - this.camera.x + shakeX + (settings.cameraKick ? this.kick.x : 0), VIEW.height / 2 - this.camera.y * GROUND_SCALE + shakeY + (settings.cameraKick ? this.kick.y : 0));
+    ctx.scale(1, GROUND_SCALE);
     ctx.drawImage(this.ground, -50, -50);
 
     if (settings.remains) for (const corpse of this.corpses) {
@@ -223,22 +224,33 @@ export class GameRenderer {
       ctx.fillStyle = '#bb9b57'; ctx.fillRect(-3, -2, 6, 2); ctx.restore();
     }
 
+    const actors = [...game.enemies, { ...game.player, kind: 'fox', id: 'player' }];
+    // Feet, shadows and targeting rings stay on the ground, below every character.
+    for (const actor of actors) ellipse(ctx, actor.x + 4, actor.y + 4, actor.kind === 'hound' ? 26 : 24, 18, '#11231875');
+    ctx.strokeStyle = game.player.invulnerable > 0 ? '#efb980' : '#e4af655a';
+    ctx.lineWidth = 1.5; ctx.beginPath(); ctx.ellipse(game.player.x, game.player.y + 1, 29, 26, 0, 0, TAU); ctx.stroke();
+    const target = input.manualAim ? null : game.enemies.find(enemy => enemy.id === input.targetId);
+    if (game.phase === 'playing' && target) {
+      ctx.strokeStyle = '#f6bd7590'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(target.x, target.y, target.radius + 9, 0, TAU); ctx.stroke();
+    }
+
     for (const enemy of game.enemies) {
       if (enemy.kind === 'hunter' && enemy.telegraph > 0) {
         ctx.strokeStyle = '#e2a37a80'; ctx.lineWidth = 2; ctx.setLineDash([5, 7]);
-        ctx.beginPath(); ctx.moveTo(enemy.x, enemy.y); ctx.lineTo(enemy.x + Math.cos(enemy.angle) * 140, enemy.y + Math.sin(enemy.angle) * 140); ctx.stroke(); ctx.setLineDash([]);
+        const y = enemy.y - SHOT_HEIGHT * HEIGHT_SCALE / GROUND_SCALE;
+        ctx.beginPath(); ctx.moveTo(enemy.x, y); ctx.lineTo(enemy.x + Math.cos(enemy.angle) * 140, y + Math.sin(enemy.angle) * 140); ctx.stroke(); ctx.setLineDash([]);
       }
     }
-    const actors = [...game.enemies, { ...game.player, kind: 'fox', id: 'player' }].sort((a, b) => a.y - b.y);
-    for (const actor of actors) this.actor(actor, game, settings);
-    for (const bullet of game.bullets) this.bullet(bullet, settings);
+    // Interleave projectiles with actors so shots can pass behind a nearer body.
+    const scene = [...actors.map(actor => ({ y: actor.y, actor })), ...game.bullets.map(bullet => ({ y: bullet.y, bullet }))].sort((a, b) => a.y - b.y);
+    for (const item of scene) item.actor ? this.actor(item.actor, game, settings) : this.bullet(item.bullet, settings);
     for (const particle of this.particles) if (settings[particle.effect]) this.drawParticle(particle);
 
-    const target = input.manualAim ? null : game.enemies.find(enemy => enemy.id === input.targetId);
-    if (game.phase === 'playing' && (input.manualAim || target)) {
-      ctx.save(); ctx.translate(target ? target.x : input.aimX, target ? target.y : input.aimY); ctx.scale(1, 1 / SQUASH);
-      const radius = target ? target.radius + 7 : 6;
-      ctx.strokeStyle = target ? '#f6bd7590' : '#f7ebcbaf'; ctx.lineWidth = 1.5;
+    if (game.phase === 'playing' && input.manualAim) {
+      ctx.save(); ctx.translate(input.aimX, input.aimY); ctx.scale(1, 1 / GROUND_SCALE); ctx.translate(0, -SHOT_HEIGHT * HEIGHT_SCALE);
+      const radius = 6;
+      ctx.strokeStyle = '#f7ebcbaf'; ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.arc(0, 0, radius, 0, TAU);
       for (const angle of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) { ctx.moveTo(Math.cos(angle) * (radius + 3), Math.sin(angle) * (radius + 3)); ctx.lineTo(Math.cos(angle) * (radius + 7), Math.sin(angle) * (radius + 7)); }
       ctx.stroke(); ctx.restore();
@@ -248,80 +260,27 @@ export class GameRenderer {
 
   actor(actor, game, settings) {
     const ctx = this.ctx;
-    const fox = actor.kind === 'fox';
-    const moving = Math.hypot(actor.vx, actor.vy) > 5;
-    const stride = settings.animation && moving ? Math.sin(game.time * 17 + (typeof actor.id === 'number' ? actor.id : 0)) : 0;
-    const flash = settings.hitFlash && this.flashes.has(actor.id);
-    const white = '#fff5d6';
-    ctx.save(); ctx.translate(actor.x, actor.y);
-    ellipse(ctx, 3, 7, fox ? 22 : 21, 14, '#11231866');
-    if (fox && game.phase === 'over') ctx.rotate(this.foxFall * .9);
-    ctx.translate(0, stride * .8);
-    ctx.rotate(actor.angle);
-
-    if (fox) {
-      ctx.save(); ctx.translate(-10, 0); ctx.rotate(settings.animation ? stride * .12 : 0);
-      polygon(ctx, [[0, -6], [-23, -12], [-39, 0], [-23, 11], [0, 6]], flash ? white : '#c66639');
-      polygon(ctx, [[-26, -9], [-39, 0], [-26, 9], [-20, 0]], '#f0deba'); ctx.restore();
-      ellipse(ctx, -4 + stride * 3, -11, 8, 5, '#292d26');
-      ellipse(ctx, -4 - stride * 3, 11, 8, 5, '#292d26');
-      ellipse(ctx, -3, 0, 17, 13, flash ? white : '#e38a48');
-      ellipse(ctx, 5, 0, 12, 11, flash ? white : '#f2a45a');
-      polygon(ctx, [[-1, -5], [-5, -17], [9, -10]], flash ? white : '#f4a259');
-      polygon(ctx, [[-1, 5], [-5, 17], [9, 10]], flash ? white : '#f4a259');
-      polygon(ctx, [[-1, -8], [-3, -13], [5, -9]], '#673f31');
-      polygon(ctx, [[-1, 8], [-3, 13], [5, 9]], '#673f31');
-      polygon(ctx, [[5, -8], [23, 0], [5, 8], [10, 0]], '#f7e5bf');
-      ellipse(ctx, 21, 0, 3, 3, '#282f27');
-      ellipse(ctx, 8, -5, 1.8, 2, '#262c25'); ellipse(ctx, 8, 5, 1.8, 2, '#262c25');
-      this.gun(settings.gunRecoil ? this.recoil : 0, flash, actor.radius + 9);
-    } else if (actor.kind === 'hunter') {
-      ellipse(ctx, -5 + stride * 3, -11, 9, 5, '#292e27'); ellipse(ctx, -5 - stride * 3, 11, 9, 5, '#292e27');
-      ellipse(ctx, -4, 0, 18, 14, flash ? white : '#718164');
-      ctx.fillStyle = flash ? white : '#aa8661'; ctx.fillRect(-4, 5, 15, 7);
-      ellipse(ctx, 10, 0, 9, 10, flash ? white : '#d3b187');
-      ellipse(ctx, 3, 0, 12, 16, flash ? white : '#405947');
-      ellipse(ctx, 0, 0, 11, 11, flash ? white : '#78916a');
-      ctx.fillStyle = '#d1bc7c'; ctx.fillRect(0, -10, 3, 20);
-      this.gun(0, flash, actor.radius + 9);
-    } else {
-      ellipse(ctx, -8 + stride * 3, -8, 7, 4, '#443b2d'); ellipse(ctx, 8 - stride * 3, 9, 7, 4, '#443b2d');
-      polygon(ctx, [[-12, -3], [-30, -7 - stride * 2], [-24, 1], [-12, 5]], flash ? white : '#ac8f65');
-      ellipse(ctx, -3, 0, 20, 11, flash ? white : '#b5986d');
-      ellipse(ctx, -7, -1, 11, 8, flash ? white : '#665844');
-      ellipse(ctx, 12, 0, 11, 10, flash ? white : '#c9ad80');
-      ellipse(ctx, 11, -9, 8, 4, '#766044'); ellipse(ctx, 11, 9, 8, 4, '#766044');
-      ellipse(ctx, 23, 0, 8, 6, flash ? white : '#dac5a0');
-      ellipse(ctx, 29, 0, 3, 4, '#342f26');
-      ellipse(ctx, 16, -5, 1.7, 1.7, '#262d24'); ellipse(ctx, 16, 5, 1.7, 1.7, '#262d24');
-      ctx.fillStyle = '#c37558'; ctx.fillRect(1, -11, 3, 22);
+    ctx.save(); ctx.translate(actor.x, actor.y); ctx.scale(1, 1 / GROUND_SCALE);
+    drawActor(ctx, actor, {
+      time: game.time,
+      animation: settings.animation,
+      recoil: actor.kind === 'fox' && settings.gunRecoil ? this.recoil : 0,
+      flash: settings.hitFlash && this.flashes.has(actor.id),
+      fall: actor.kind === 'fox' && game.phase === 'over' ? this.foxFall : 0
+    });
+    if (actor.kind !== 'fox' && actor.hp < actor.maxHp && !settings.lowHp) {
+      const top = actor.kind === 'hunter' ? -72 : -43;
+      ctx.fillStyle = '#1d2b21'; ctx.fillRect(-15, top, 30, 3);
+      ctx.fillStyle = '#d0a97a'; ctx.fillRect(-15, top, 30 * actor.hp / actor.maxHp, 3);
     }
-    ctx.restore();
-    if (fox) {
-      ctx.strokeStyle = game.player.invulnerable > 0 ? '#efb980' : '#e4af655a';
-      ctx.lineWidth = 1.5; ctx.beginPath(); ctx.ellipse(actor.x, actor.y + 1, 29, 26, 0, 0, TAU); ctx.stroke();
-    } else if (actor.hp < actor.maxHp && !settings.lowHp) {
-      ctx.fillStyle = '#1d2b21'; ctx.fillRect(actor.x - 15, actor.y - 31, 30, 3);
-      ctx.fillStyle = '#d0a97a'; ctx.fillRect(actor.x - 15, actor.y - 31, 30 * actor.hp / actor.maxHp, 3);
-    }
-  }
-
-  gun(recoil, flash, muzzle) {
-    const ctx = this.ctx;
-    ctx.save(); ctx.translate(muzzle - recoil, 0); ctx.scale(1.8, 1.8); ctx.translate(-muzzle, 0);
-    // Grow back from the muzzle so the resting barrel tip still matches shot origins.
-    polygon(ctx, [[4, 8], [11, 3], [18, -3], [muzzle, -3], [muzzle, 3], [20, 3], [12, 12], [4, 13]], flash ? '#fff5d6' : '#536361');
-    ctx.strokeStyle = '#18231f'; ctx.lineWidth = 1; ctx.stroke();
-    ctx.fillStyle = '#b0916c'; ctx.fillRect(5, 8, 9, 5);
-    ctx.fillStyle = '#9da69b'; ctx.fillRect(18, -2, muzzle - 18, 4);
-    ctx.fillStyle = '#202b24'; ctx.fillRect(muzzle - 2, -3, 2, 6);
     ctx.restore();
   }
 
   bullet(bullet, settings) {
     const ctx = this.ctx;
     const player = bullet.owner === 'player';
-    ctx.save(); ctx.translate(bullet.x, bullet.y); ctx.rotate(Math.atan2(bullet.vy, bullet.vx));
+    ctx.save(); ctx.translate(bullet.x, bullet.y); ctx.scale(1, 1 / GROUND_SCALE);
+    ctx.translate(0, -SHOT_HEIGHT * HEIGHT_SCALE); ctx.rotate(projectedAngle(Math.atan2(bullet.vy, bullet.vx)));
     if (settings.bigBullets) {
       ctx.scale(1.4, 1.4);
       ctx.fillStyle = player ? '#f1c27945' : '#e3976d55'; ctx.fillRect(-24, -3, 27, 6);
@@ -337,6 +296,9 @@ export class GameRenderer {
     const ctx = this.ctx;
     const progress = 1 - particle.life / particle.maxLife;
     ctx.save(); ctx.translate(particle.x, particle.y);
+    if (particle.kind !== 'ring') {
+      ctx.scale(1, 1 / GROUND_SCALE); ctx.translate(0, -particle.z * HEIGHT_SCALE);
+    }
     if (particle.kind === 'spark') {
       ctx.globalAlpha = 1 - progress;
       ctx.fillStyle = particle.colour; ctx.fillRect(-particle.size / 2, -particle.size / 2, particle.size, particle.size);
@@ -350,7 +312,7 @@ export class GameRenderer {
       ctx.beginPath(); ctx.arc(0, 0, radius, 0, TAU); ctx.stroke();
       ellipse(ctx, 0, 0, radius * .62, radius * .62, '#e9a45a35');
     } else if (particle.kind === 'muzzle') {
-      ctx.rotate(particle.angle);
+      ctx.rotate(projectedAngle(particle.angle));
       // Hold the bright peak before fading, so the flash reads at laptop scale.
       ctx.globalAlpha = 1 - progress ** 3;
       const size = particle.size * (1 - progress * .25);

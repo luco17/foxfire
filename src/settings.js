@@ -2,7 +2,7 @@
 export const REFERENCE_URL = 'https://www.youtube.com/watch?v=AJdEqssNZ-U';
 
 export const EFFECTS = [
-  { id: 'animation', name: 'Character animation', group: 'feedback', time: '8:25', description: 'A running bob, moving feet and a swishing fox tail.' },
+  { id: 'animation', name: 'Character animation', group: 'feedback', time: '8:25', description: 'Moving feet, a running bob and a bushy tail that wags even at rest.' },
   { id: 'sound', name: 'Sound effects', group: 'feedback', time: '8:25', description: 'Synthesised shots, impacts and defeat sounds.' },
   { id: 'bigBullets', name: 'Bigger bullets', group: 'feedback', time: '10:10', description: 'Make shots easier to see. Collision size stays the same.' },
   { id: 'muzzleFlash', name: 'Muzzle flash', group: 'feedback', time: '10:36', description: 'A bright flame and warm glow at the end of the barrel.' },
