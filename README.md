@@ -2,6 +2,8 @@
 
 A small, almost top-down shooter: play a fox fighting hunters and hounds, then switch the game's feedback on and off. Inspired by Jan Willem Nijman’s [The Art of Screenshake](https://www.youtube.com/watch?v=AJdEqssNZ-U).
 
+Play [Foxfire](https://foxfire.pages.dev/).
+
 ## Run
 
 Use Node.js 22 or newer. There are no dependencies to install. Development runs directly from the source files; the build step below prepares files for publishing.
