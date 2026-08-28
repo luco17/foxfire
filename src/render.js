@@ -3,6 +3,7 @@ import { drawActor } from './actors.js';
 import { VIEW, GROUND_SCALE, HEIGHT_SCALE, SHOT_HEIGHT, viewToWorld, projectedAngle } from './projection.js';
 
 const TAU = Math.PI * 2;
+const CASING_GRAVITY = 520;
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
 function ellipse(ctx, x, y, rx, ry, colour) {
@@ -140,7 +141,22 @@ export class GameRenderer {
         const player = event.owner === 'player';
         if (player) {
           this.recoil = 17;
-          this.casings.push({ x: event.x - Math.cos(event.angle) * 17 + (this.random() - .5) * 24, y: event.y + 12 + this.random() * 23, angle: this.random() * TAU });
+          const forwardX = Math.cos(event.angle), forwardY = Math.sin(event.angle);
+          const back = 24 + (settings.gunRecoil ? this.recoil : 0);
+          const sideways = 115 + this.random() * 45;
+          const backwards = 25 + this.random() * 30;
+          // The receiver sits behind the muzzle; brass leaves its right side at gun height.
+          this.casings.push({
+            x: event.x - forwardX * back - forwardY * 7,
+            y: event.y - forwardY * back + forwardX * 7,
+            z: SHOT_HEIGHT,
+            vx: -forwardY * sideways - forwardX * backwards,
+            vy: forwardX * sideways - forwardY * backwards,
+            vz: 210 + this.random() * 45,
+            angle: this.random() * TAU,
+            spin: (9 + this.random() * 12) * (this.random() < .5 ? -1 : 1),
+            bounces: 0, settled: false,
+          });
           if (this.casings.length > 600) this.casings.shift();
           if (settings.cameraKick) { this.kick.x -= Math.cos(event.angle) * 3; this.kick.y -= Math.sin(event.angle) * 3; }
         }
@@ -197,6 +213,31 @@ export class GameRenderer {
       if (particle.kind === 'spark') { particle.vx *= Math.exp(-6 * dt); particle.vy *= Math.exp(-6 * dt); }
     }
     this.particles = this.particles.filter(particle => particle.life > 0);
+    const casingDrag = Math.exp(-1.6 * dt);
+    const casingTravel = (1 - casingDrag) / 1.6;
+    for (const casing of this.casings) {
+      if (casing.settled || dt <= 0) continue;
+      casing.x += casing.vx * casingTravel;
+      casing.y += casing.vy * casingTravel;
+      casing.z += casing.vz * dt - CASING_GRAVITY * dt * dt / 2;
+      casing.vz -= CASING_GRAVITY * dt;
+      casing.vx *= casingDrag;
+      casing.vy *= casingDrag;
+      casing.angle += casing.spin * dt;
+      if (casing.z <= 0) {
+        casing.z = 0;
+        if (casing.bounces === 0) {
+          casing.vz = Math.abs(casing.vz) * .28;
+          casing.vx *= .4;
+          casing.vy *= .4;
+          casing.spin *= .5;
+          casing.bounces++;
+        } else {
+          casing.settled = true;
+          casing.vx = casing.vy = casing.vz = casing.spin = 0;
+        }
+      }
+    }
     if (game.phase === 'over') this.foxFall = Math.min(1, this.foxFall + dt * 3);
   }
 
@@ -219,9 +260,11 @@ export class GameRenderer {
       ctx.fillRect(-9, -6, 20, 11); ctx.restore();
     }
     if (settings.casings) for (const casing of this.casings) {
-      ctx.save(); ctx.translate(casing.x, casing.y); ctx.rotate(casing.angle);
-      ctx.fillStyle = '#17261c88'; ctx.fillRect(-2, -1, 7, 4);
-      ctx.fillStyle = '#bb9b57'; ctx.fillRect(-3, -2, 6, 2); ctx.restore();
+      ctx.save();
+      ctx.globalAlpha = .16 + .22 * (1 - Math.min(casing.z / 100, 1));
+      ellipse(ctx, casing.x + 2, casing.y + 2, casing.settled ? 4 : 6 + casing.z * .02, casing.settled ? 2 : 3 + casing.z * .01, '#0b180f');
+      ctx.restore();
+      if (casing.settled) this.drawCasing(casing);
     }
 
     const actors = [...game.enemies, { ...game.player, kind: 'fox', id: 'player' }];
@@ -245,6 +288,8 @@ export class GameRenderer {
     // Interleave projectiles with actors so shots can pass behind a nearer body.
     const scene = [...actors.map(actor => ({ y: actor.y, actor })), ...game.bullets.map(bullet => ({ y: bullet.y, bullet }))].sort((a, b) => a.y - b.y);
     for (const item of scene) item.actor ? this.actor(item.actor, game, settings) : this.bullet(item.bullet, settings);
+    // Keep the ejection arc visible over the fox; settled brass stays on the floor.
+    if (settings.casings) for (const casing of this.casings) if (!casing.settled) this.drawCasing(casing);
     for (const particle of this.particles) if (settings[particle.effect]) this.drawParticle(particle);
 
     if (game.phase === 'playing' && input.manualAim) {
@@ -289,6 +334,19 @@ export class GameRenderer {
     } else {
       ctx.fillStyle = player ? '#fce7b2' : '#f4aa86'; ctx.fillRect(-5, -2.5, 10, 5);
     }
+    ctx.restore();
+  }
+
+  drawCasing(casing) {
+    const ctx = this.ctx;
+    ctx.save(); ctx.translate(casing.x, casing.y); ctx.scale(1, 1 / GROUND_SCALE);
+    ctx.translate(0, -casing.z * HEIGHT_SCALE); ctx.rotate(casing.angle);
+    // Bright, slightly larger brass reads in flight; the settled marks stay subdued.
+    if (casing.settled) ctx.scale(.65, .65);
+    ctx.fillStyle = casing.settled ? '#876b36' : '#79502c'; ctx.fillRect(-5, -2.5, 10, 5);
+    ctx.fillStyle = casing.settled ? '#c4a15c' : '#f4cf76'; ctx.fillRect(-4.5, -1.5, 8.5, 3);
+    ctx.fillStyle = casing.settled ? '#ddbd78' : '#fff1b0'; ctx.fillRect(-4, -1.5, 6.5, 1);
+    ctx.fillStyle = casing.settled ? '#8f723a' : '#be8c3f'; ctx.fillRect(-5, -2, 1.5, 4);
     ctx.restore();
   }
 

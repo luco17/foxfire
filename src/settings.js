@@ -15,7 +15,7 @@ export const EFFECTS = [
   { id: 'shake', name: 'Screen shake', group: 'camera', time: '16:30', description: 'Small, decaying jolts when firing or landing a hit.' },
   { id: 'cameraKick', name: 'Directional camera kick', group: 'camera', time: '25:21', description: 'Recoil opposite the shot, separate from random shake.' },
   { id: 'remains', name: 'Fallen enemies', group: 'aftermath', time: '13:07', description: 'Leave subdued silhouettes where enemies fell.' },
-  { id: 'casings', name: 'Shell casings', group: 'aftermath', time: '20:31', description: 'Spent cartridges stay on the ground; oldest removed at the cap.' },
+  { id: 'casings', name: 'Shell casings', group: 'aftermath', time: '20:31', description: 'Brass spins out of the gun, arcs above its shadow and bounces once before settling. Oldest removed at the cap.' },
   { id: 'bursts', name: 'Death bursts', group: 'aftermath', time: '27:20', description: 'A stylised, non-damaging burst when an enemy falls.' },
   { id: 'smoke', name: 'Lingering smoke', group: 'aftermath', time: '27:49', description: 'Smoke briefly marks the end of a fight.' },
   { id: 'lowHp', name: 'One-hit enemies', group: 'combat', time: '9:00', description: 'Enemies fall to one hit. Changes difficulty.' },
