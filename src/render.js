@@ -144,7 +144,11 @@ export class GameRenderer {
           if (this.casings.length > 600) this.casings.shift();
           if (settings.cameraKick) { this.kick.x -= Math.cos(event.angle) * 3; this.kick.y -= Math.sin(event.angle) * 3; }
         }
-        if (settings.muzzleFlash) this.particle({ kind: 'muzzle', effect: 'muzzleFlash', x: event.x, y: event.y, life: .065, size: player ? 14 : 10, angle: event.angle, colour: player ? '#fff0ad' : '#ffb897' });
+        if (settings.muzzleFlash) this.particle({
+          kind: 'muzzle', effect: 'muzzleFlash', x: event.x, y: event.y,
+          life: .13, size: player ? 44 : 30, angle: event.angle,
+          colour: player ? '#ffb347' : '#ff9a66'
+        });
         if (settings.shake && player) this.shake = Math.max(this.shake, 2.5);
       }
       if (event.type === 'hit') {
@@ -344,10 +348,25 @@ export class GameRenderer {
       ctx.beginPath(); ctx.arc(0, 0, radius, 0, TAU); ctx.stroke();
       ellipse(ctx, 0, 0, radius * .62, radius * .62, '#e9a45a35');
     } else if (particle.kind === 'muzzle') {
-      ctx.rotate(particle.angle); ctx.globalAlpha = 1 - progress;
-      const size = particle.size * (1 - progress * .4);
-      polygon(ctx, [[-5, 0], [1, -size * .5], [7, -4], [size, 0], [7, 4], [1, size * .5]], particle.colour);
-      ellipse(ctx, 3, 0, 5, 4, '#fff8d7');
+      ctx.rotate(particle.angle);
+      // Hold the bright peak before fading, so the flash reads at laptop scale.
+      ctx.globalAlpha = 1 - progress ** 3;
+      const size = particle.size * (1 - progress * .25);
+      const glow = ctx.createRadialGradient(size * .15, 0, 0, size * .15, 0, size);
+      glow.addColorStop(0, '#ffe9a480');
+      glow.addColorStop(.35, '#ffb34740');
+      glow.addColorStop(1, '#ffb34700');
+      ctx.globalCompositeOperation = 'lighter';
+      ellipse(ctx, size * .15, 0, size, size * .8, glow);
+      ctx.globalCompositeOperation = 'source-over';
+      polygon(ctx, [
+        [-5, 0], [size * .12, -size * .5], [size * .28, -size * .18],
+        [size * .72, -size * .3], [size * .52, -size * .09], [size, 0],
+        [size * .52, size * .09], [size * .72, size * .3],
+        [size * .28, size * .18], [size * .12, size * .5]
+      ], particle.colour);
+      polygon(ctx, [[-3, 0], [size * .18, -size * .25], [size * .78, 0], [size * .18, size * .25]], '#ffe9a1');
+      polygon(ctx, [[-3, 0], [size * .16, -size * .13], [size * .58, 0], [size * .16, size * .13]], '#fffdf1');
     }
     ctx.restore();
   }

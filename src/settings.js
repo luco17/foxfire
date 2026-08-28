@@ -5,7 +5,7 @@ export const EFFECTS = [
   { id: 'animation', name: 'Character animation', group: 'feedback', time: '8:25', description: 'A running bob, moving feet and a swishing fox tail.' },
   { id: 'sound', name: 'Sound effects', group: 'feedback', time: '8:25', description: 'Synthesised shots, impacts and defeat sounds.' },
   { id: 'bigBullets', name: 'Bigger bullets', group: 'feedback', time: '10:10', description: 'Make shots easier to see. Collision size stays the same.' },
-  { id: 'muzzleFlash', name: 'Muzzle flash', group: 'feedback', time: '10:36', description: 'A short flash at the end of the barrel.' },
+  { id: 'muzzleFlash', name: 'Muzzle flash', group: 'feedback', time: '10:36', description: 'A bright flame and warm glow at the end of the barrel.' },
   { id: 'impacts', name: 'Impact particles', group: 'feedback', time: '11:43', description: 'Sparks mark where a shot meets an enemy or the arena edge.' },
   { id: 'hitFlash', name: 'Hit flash', group: 'feedback', time: '12:06', description: 'Briefly highlight the character that took damage.' },
   { id: 'gunRecoil', name: 'Gun recoil animation', group: 'feedback', time: '19:54', description: 'The weapon kicks back, without moving the fox.' },
