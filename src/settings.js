@@ -8,7 +8,7 @@ export const EFFECTS = [
   { id: 'muzzleFlash', name: 'Muzzle flash', group: 'feedback', time: '10:36', description: 'A bright flame and warm glow at the end of the barrel.' },
   { id: 'impacts', name: 'Impact particles', group: 'feedback', time: '11:43', description: 'Sparks mark where a shot meets an enemy or the arena edge.' },
   { id: 'hitFlash', name: 'Hit flash', group: 'feedback', time: '12:06', description: 'Briefly highlight the character that took damage.' },
-  { id: 'gunRecoil', name: 'Gun recoil animation', group: 'feedback', time: '19:54', description: 'The weapon kicks back, without moving the fox.' },
+  { id: 'gunRecoil', name: 'Gun recoil animation', group: 'feedback', time: '19:54', description: 'A strong weapon kick with a visible return, without moving the fox.' },
   { id: 'bass', name: 'Bassier shots', group: 'feedback', time: '21:35', description: 'Add a low thump to gunshots. Requires Sound effects.' },
   { id: 'cameraEase', name: 'Camera follow', group: 'camera', time: '14:42', description: 'The camera gently eases towards the fox.' },
   { id: 'cameraLead', name: 'Look ahead', group: 'camera', time: '15:14', description: 'Frame a little more of the direction you are aiming.' },

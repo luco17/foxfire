@@ -139,7 +139,7 @@ export class GameRenderer {
       if (event.type === 'shot') {
         const player = event.owner === 'player';
         if (player) {
-          this.recoil = 7;
+          this.recoil = 17;
           this.casings.push({ x: event.x - Math.cos(event.angle) * 17 + (this.random() - .5) * 24, y: event.y + 12 + this.random() * 23, angle: this.random() * TAU });
           if (this.casings.length > 600) this.casings.shift();
           if (settings.cameraKick) { this.kick.x -= Math.cos(event.angle) * 3; this.kick.y -= Math.sin(event.angle) * 3; }
@@ -176,7 +176,7 @@ export class GameRenderer {
 
   update(game, input, settings, dt) {
     this.fxTime += dt;
-    this.recoil *= Math.exp(-23 * dt);
+    this.recoil *= Math.exp(-14 * dt);
     this.shake *= Math.exp(-15 * dt);
     this.kick.x *= Math.exp(-14 * dt);
     this.kick.y *= Math.exp(-14 * dt);
@@ -308,9 +308,10 @@ export class GameRenderer {
 
   gun(recoil, flash, muzzle) {
     const ctx = this.ctx;
-    ctx.save(); ctx.translate(-recoil, 0);
-    // The tip is on the same local axis and radius as the simulation's muzzle.
-    polygon(ctx, [[4, 8], [11, 3], [18, -3], [muzzle, -3], [muzzle, 3], [20, 3], [12, 12], [4, 13]], flash ? '#fff5d6' : '#303d34');
+    ctx.save(); ctx.translate(muzzle - recoil, 0); ctx.scale(1.8, 1.8); ctx.translate(-muzzle, 0);
+    // Grow back from the muzzle so the resting barrel tip still matches shot origins.
+    polygon(ctx, [[4, 8], [11, 3], [18, -3], [muzzle, -3], [muzzle, 3], [20, 3], [12, 12], [4, 13]], flash ? '#fff5d6' : '#536361');
+    ctx.strokeStyle = '#18231f'; ctx.lineWidth = 1; ctx.stroke();
     ctx.fillStyle = '#b0916c'; ctx.fillRect(5, 8, 9, 5);
     ctx.fillStyle = '#9da69b'; ctx.fillRect(18, -2, muzzle - 18, 4);
     ctx.fillStyle = '#202b24'; ctx.fillRect(muzzle - 2, -3, 2, 6);
