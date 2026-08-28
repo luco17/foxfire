@@ -6,6 +6,7 @@ import { EFFECTS, GROUPS, MOTION_EFFECTS, preset, presetName, referenceTime } fr
 
 const byId = id => document.getElementById(id);
 const canvas = byId('game');
+const optionsPanel = byId('options-panel');
 const renderer = new GameRenderer(canvas);
 const audio = new GameAudio();
 const SEED = 1337;
@@ -13,6 +14,7 @@ let game = createGame(SEED);
 let settings = preset('bare');
 let mode = 'ready';
 let demo = false;
+let optionsPausedRun = false;
 let controlMode = 'auto';
 let fireTap = false;
 let accumulator = 0;
@@ -147,8 +149,47 @@ function clearInput() {
   pointer.down = false;
   pointer.tap = false;
   pointer.known = false;
+  input.moveX = 0;
+  input.moveY = 0;
   input.shoot = false;
 }
+
+function updateOptionsStatus() {
+  byId('options-status').textContent = optionsPausedRun && mode === 'paused'
+    ? 'Your game is paused. Close this panel to resume.'
+    : demo && mode === 'playing' ? 'Demo keeps playing while you change effects.'
+    : mode === 'paused' ? 'Your game will stay paused when you close this panel.'
+    : mode === 'ready' ? 'Choose your settings, then start a run.'
+    : 'These settings apply to your next run.';
+}
+
+function openOptions() {
+  if (optionsPanel.open) return;
+  clearInput();
+  optionsPausedRun = mode === 'playing' && !demo;
+  if (optionsPausedRun) togglePause();
+  optionsPanel.showModal();
+  updateOptionsStatus();
+}
+
+byId('options-open').addEventListener('click', openOptions);
+byId('options-close').addEventListener('click', () => optionsPanel.close());
+optionsPanel.addEventListener('close', () => {
+  const resume = optionsPausedRun && mode === 'paused' && !document.hidden && document.hasFocus();
+  optionsPausedRun = false;
+  clearInput();
+  if (resume) togglePause();
+  else canvas.focus({ preventScroll: true });
+});
+optionsPanel.addEventListener('click', event => {
+  if (event.target !== optionsPanel) return;
+  const rect = optionsPanel.getBoundingClientRect();
+  if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) {
+    // Close after release so a backdrop click cannot become an arena shot.
+    event.preventDefault();
+    optionsPanel.close();
+  }
+});
 
 function updateControls() {
   const descriptions = {
@@ -158,7 +199,7 @@ function updateControls() {
   };
   const selected = descriptions[controlMode];
   canvas.dataset.controls = controlMode;
-  canvas.setAttribute('aria-label', `Game arena. Move with W A S D or arrow keys. ${selected.canvas} Enter starts or restarts. P pauses. R restarts.`);
+  canvas.setAttribute('aria-label', `Game arena. Move with W A S D or arrow keys. ${selected.canvas} Enter starts or restarts. P pauses. R restarts. J opens the juice panel.`);
   byId('control-note').textContent = selected.short;
   byId('control-explanation').textContent = selected.detail;
   byId('shoot-hint').textContent = selected.hint;
@@ -170,7 +211,7 @@ byId('control-mode').addEventListener('change', event => {
   clearInput();
   updateControls();
   announce(byId('control-explanation').textContent);
-  canvas.focus({ preventScroll: true });
+  if (!optionsPanel.open) canvas.focus({ preventScroll: true });
 });
 
 function setMode(next) {
@@ -199,6 +240,7 @@ function setMode(next) {
     announce(demo ? 'Demo running. You can change effects while it plays.' : `Game started. ${byId('control-explanation').textContent}`);
   }
   updateAudioStatus();
+  updateOptionsStatus();
 }
 
 function startRun() {
@@ -240,12 +282,12 @@ byId('demo').addEventListener('click', () => {
 });
 
 canvas.addEventListener('pointermove', event => {
-  if (controlMode === 'mouse' && !demo) {
+  if (controlMode === 'mouse' && !demo && !optionsPanel.open) {
     pointer.x = event.clientX; pointer.y = event.clientY; pointer.known = true;
   }
 });
 canvas.addEventListener('pointerdown', event => {
-  if (event.button !== 0 || mode !== 'playing') return;
+  if (event.button !== 0 || mode !== 'playing' || optionsPanel.open) return;
   event.preventDefault();
   canvas.focus({ preventScroll: true });
   if (controlMode === 'mouse' && !demo) {
@@ -262,7 +304,14 @@ canvas.addEventListener('contextmenu', event => event.preventDefault());
 
 const movementKeys = ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight', 'Space'];
 document.addEventListener('keydown', event => {
-  if (event.metaKey || event.ctrlKey || event.altKey || event.target.closest('textarea, select, [contenteditable="true"], input:not([type="checkbox"]):not([type="range"])')) return;
+  if (event.metaKey || event.ctrlKey || event.altKey) return;
+  if (event.code === 'KeyJ' && !event.target.closest('input, textarea, select, [contenteditable="true"]')) {
+    event.preventDefault();
+    if (!event.repeat) optionsPanel.open ? optionsPanel.close() : openOptions();
+    return;
+  }
+  if (optionsPanel.open) return;
+  if (event.target.closest('textarea, select, [contenteditable="true"], input:not([type="checkbox"]):not([type="range"])')) return;
   if (event.code === 'Enter' && !event.target.closest('input, button, summary, a') && ['ready', 'paused', 'over'].includes(mode)) {
     event.preventDefault();
     if (!event.repeat) mode === 'paused' ? togglePause() : startRun();
@@ -274,6 +323,7 @@ document.addEventListener('keydown', event => {
     if (!event.repeat) startRun();
   } else if (movementKeys.includes(event.code) && mode === 'playing' && !event.target.closest('input, button, summary, a, select')) {
     event.preventDefault();
+    if (event.repeat && !keys.has(event.code)) return;
     keys.add(event.code);
     if (event.code === 'Space' && !event.repeat) fireTap = true;
   }

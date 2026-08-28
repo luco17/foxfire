@@ -28,9 +28,13 @@ The game is designed for a laptop or desktop browser. **No mouse is needed:** pr
 | Enter | Start, resume or try again after defeat |
 | P or Escape | Pause / resume |
 | R | Restart with the same seed |
+| Options / J | Open the effects and controls panel |
+| Escape with options open | Close the panel |
 | Demo | Start a fresh run with automatic movement and aiming; click again to take control |
 
-Choose a control mode above the arena:
+The arena fills the window, with a small toolbar and a compact score display. **Options** opens a floating panel; the arena keeps its size behind it. Opening the panel pauses a player run and closing it resumes that same run. A run you paused yourself stays paused. **Demo keeps running** while the panel is open so you can compare effects live.
+
+Choose a control mode in Options:
 
 | Mode | Aiming and shooting |
 | --- | --- |
@@ -38,7 +42,7 @@ Choose a control mode above the arena:
 | Move + Space | The fox aims automatically. Hold Space to fire; release it to stop. |
 | Mouse aim | Aim with the mouse. Hold left click or Space to fire. |
 
-The two automatic aiming modes ignore the trackpad. A small ring marks the current target. Aim assistance never moves the fox; Demo is the separate autopilot for comparing effects. Changing a mode returns keyboard focus to the arena. Juice presets do not change your control mode.
+The two automatic aiming modes ignore the trackpad. A small ring marks the current target. Aim assistance never moves the fox; Demo is the separate autopilot for comparing effects. Focus stays inside Options while you adjust controls, then returns to the arena when you close it. Juice presets do not change your control mode.
 
 Hunters wear green and fire slow rounds after a visible warning. Hounds chase. You have five health points. Avoid contact and bullets; survive and score takedowns. There is one open arena, one weapon and no campaign, upgrades, multiplayer or save system.
 

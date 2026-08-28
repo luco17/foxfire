@@ -14,6 +14,8 @@ The reference is Jan Willem Nijman’s [The art of screenshake, INDIGO Classes 2
 
 **I3 — Other keyboard schemes.** Separate movement and firing keys (for example WASD plus arrow keys) allow deliberate directional fire, but need both hands. Firing along the movement direction uses fewer controls, but makes retreating while shooting awkward. Neither scheme is included in this first laptop version.
 
+**I4 — Arena and options.** The arena occupies the window, with a small toolbar and score display over it. The canvas keeps its proportions and shows the full playfield. Options lives in a native HTML dialog styled as a floating panel on the right; its contents scroll independently and opening it does not resize the game. J opens the panel. Close, Escape or a backdrop click dismisses it. Player runs pause while it is open and resume only if the panel caused the pause; Demo keeps playing for live comparisons. Native modal focus prevents game input from leaking through the controls.
+
 [src/settings.js](../src/settings.js) defines the 27 switches, their descriptions and individual video links. Its groups deliberately separate presentation from changes to combat or timing.
 
 | Ref | Group | Implemented controls |
