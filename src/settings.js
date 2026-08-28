@@ -14,7 +14,7 @@ export const EFFECTS = [
   { id: 'cameraLead', name: 'Look ahead', group: 'camera', time: '15:14', description: 'Frame a little more of the direction you are aiming.' },
   { id: 'shake', name: 'Screen shake', group: 'camera', time: '16:30', description: 'Small, decaying jolts when firing or landing a hit.' },
   { id: 'cameraKick', name: 'Directional camera kick', group: 'camera', time: '25:21', description: 'Recoil opposite the shot, separate from random shake.' },
-  { id: 'remains', name: 'Fallen enemies', group: 'aftermath', time: '13:07', description: 'Leave subdued silhouettes where enemies fell.' },
+  { id: 'remains', name: 'Fallen enemies', group: 'aftermath', time: '13:07', description: 'Leave recognisable hunter and hound bodies where they fall. Oldest removed at the cap.' },
   { id: 'casings', name: 'Shell casings', group: 'aftermath', time: '20:31', description: 'Brass spins out of the gun, arcs above its shadow and bounces once before settling. Oldest removed at the cap.' },
   { id: 'bursts', name: 'Death bursts', group: 'aftermath', time: '27:20', description: 'A stylised, non-damaging burst when an enemy falls.' },
   { id: 'smoke', name: 'Lingering smoke', group: 'aftermath', time: '27:49', description: 'Smoke briefly marks the end of a fight.' },

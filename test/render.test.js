@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { GameRenderer } from '../src/render.js';
-import { drawActor } from '../src/actors.js';
+import { drawActor, drawFallenActor } from '../src/actors.js';
 import { createGame } from '../src/game.js';
 import { VIEW, GROUND_SCALE, SHOT_HEIGHT, worldToView } from '../src/projection.js';
 
@@ -32,7 +32,7 @@ function recordingContext() {
     'save', 'restore', 'translate', 'rotate', 'beginPath', 'closePath',
     'ellipse', 'moveTo', 'lineTo', 'bezierCurveTo', 'quadraticCurveTo',
     'fill', 'stroke', 'clip', 'setTransform', 'scale', 'drawImage',
-    'fillRect', 'arc', 'setLineDash',
+    'fillRect', 'strokeRect', 'arc', 'setLineDash',
   ]) ctx[name] = (...args) => commands.push([name, ...args]);
   ctx.createLinearGradient = (...args) => {
     commands.push(['createLinearGradient', ...args]);
@@ -47,8 +47,18 @@ function drawingCommands(subject, options) {
   return commands;
 }
 
+function fallenCommands(corpse) {
+  const { ctx, commands } = recordingContext();
+  drawFallenActor(ctx, corpse);
+  return commands;
+}
+
 function shot(angle = 0) {
   return { type: 'shot', owner: 'player', x: 700, y: 430, angle };
+}
+
+function death(kind = 'hunter', id = 1) {
+  return { type: 'death', kind, id, x: 350, y: 420, angle: 0.65 };
 }
 
 test('client coordinates round trip shot-height world positions across canvas sizes and camera offsets', () => {
@@ -124,6 +134,99 @@ test('actor drawing does not mutate actors or presentation options', () => {
     assert.deepEqual(subject, before);
   }
   assert.deepEqual(options, { time: 0.27, animation: true, recoil: 12, flash: true, fall: 0.4 });
+});
+
+test('fallen hunter and hound art is distinct, deterministic and local without mutating corpse records', () => {
+  const drawings = [];
+  for (const kind of ['hunter', 'hound']) {
+    const corpse = Object.freeze({ kind, id: 7, x: 350, y: 420, angle: 0.65 });
+    const before = structuredClone(corpse);
+    const commands = fallenCommands(corpse);
+    assert.ok(commands.some(command => ['fill', 'stroke', 'fillRect'].includes(command[0])));
+    assert.deepEqual(fallenCommands(corpse), commands);
+    assert.deepEqual(fallenCommands({ ...corpse, x: 830, y: 190, angle: -1.2 }), commands,
+      'world placement belongs to the renderer, not the local fallen art');
+    assert.deepEqual(corpse, before);
+    drawings.push(commands);
+  }
+  assert.notDeepEqual(drawings[0], drawings[1]);
+});
+
+test('death records remain unchanged while hidden and after updates without changing game state or events', () => {
+  const renderer = rendererAt();
+  renderer.reset();
+  const events = Object.freeze([
+    Object.freeze(death('hunter', 7)),
+    Object.freeze({ ...death('hound', 9), x: 820, y: 210, angle: -0.4 }),
+  ]);
+  const game = createGame();
+  const before = structuredClone({ game, events });
+  renderer.consume(events, { remains: false });
+  const expected = events.map(event => ({ ...event, angle: event.angle + 0.5 }));
+  assert.deepEqual(renderer.corpses, expected);
+  for (let index = 0; index < events.length; index++) assert.notEqual(renderer.corpses[index], events[index]);
+  renderer.update(game, {}, { remains: false }, 1);
+  renderer.update(game, {}, { remains: true }, 1);
+  assert.deepEqual(renderer.corpses, expected);
+  assert.deepEqual({ game, events }, before);
+});
+
+test('fallen bodies retain the newest 100 death records and reset clears them', () => {
+  const renderer = rendererAt();
+  renderer.reset();
+  const events = Array.from({ length: 105 }, (_, index) => death(index % 2 ? 'hunter' : 'hound', index + 1));
+  renderer.consume(events, { remains: false });
+  assert.equal(renderer.corpses.length, 100);
+  assert.deepEqual(renderer.corpses.map(corpse => corpse.id), events.slice(-100).map(event => event.id));
+  renderer.reset();
+  assert.deepEqual(renderer.corpses, []);
+  renderer.consume([death('hunter', 200)], { remains: true });
+  assert.deepEqual(renderer.corpses.map(corpse => corpse.id), [200]);
+});
+
+test('the remains toggle reveals stored bodies on the floor before live actors and hides all corpse drawing', () => {
+  const renderer = rendererAt();
+  renderer.reset();
+  renderer.consume([death('hunter', 7), death('hound', 9)], { remains: false });
+  const before = structuredClone(renderer.corpses);
+  const { ctx, commands } = recordingContext();
+  renderer.ctx = ctx;
+  renderer.ground = {};
+  renderer.actor = subject => commands.push(['actor', subject.id]);
+  renderer.drawCorpse = corpse => commands.push(['corpse', corpse.id]);
+  const game = createGame();
+  renderer.draw(game, {}, { remains: true });
+  const ground = commands.findIndex(command => command[0] === 'drawImage');
+  const firstActor = commands.findIndex(command => command[0] === 'actor');
+  assert.ok(ground >= 0 && firstActor > ground);
+  assert.deepEqual(commands.filter(command => command[0] === 'corpse').map(command => command[1]), [7, 9]);
+  for (let index = 0; index < commands.length; index++) {
+    if (commands[index][0] === 'corpse') assert.ok(index > ground && index < firstActor);
+  }
+  assert.deepEqual(renderer.corpses, before);
+  commands.length = 0;
+  renderer.draw(game, {}, { remains: false });
+  const hidden = structuredClone(commands);
+  commands.length = 0;
+  renderer.corpses = [];
+  renderer.draw(game, {}, { remains: false });
+  assert.deepEqual(hidden, commands);
+});
+
+test('corpse drawing applies its recorded ground position and angle exactly once without height or health overlays', () => {
+  const renderer = rendererAt();
+  for (const kind of ['hunter', 'hound']) {
+    for (const angle of [0, 0.67, -1.2]) {
+      const corpse = Object.freeze({ kind, id: 7, x: 413.5, y: 302.25, angle });
+      const { ctx, commands } = recordingContext();
+      renderer.ctx = ctx;
+      renderer.drawCorpse(corpse);
+      assert.deepEqual(commands, [
+        ['save'], ['translate', corpse.x, corpse.y], ['rotate', angle],
+        ...fallenCommands(corpse), ['restore'],
+      ]);
+    }
+  }
 });
 
 test('player casings spawn at the rotated receiver and eject sideways and backwards, even when hidden', () => {

@@ -1,5 +1,5 @@
 import { WORLD } from './game.js';
-import { drawActor } from './actors.js';
+import { drawActor, drawFallenActor } from './actors.js';
 import { VIEW, GROUND_SCALE, HEIGHT_SCALE, SHOT_HEIGHT, viewToWorld, projectedAngle } from './projection.js';
 
 const TAU = Math.PI * 2;
@@ -253,12 +253,7 @@ export class GameRenderer {
     ctx.scale(1, GROUND_SCALE);
     ctx.drawImage(this.ground, -50, -50);
 
-    if (settings.remains) for (const corpse of this.corpses) {
-      ctx.save(); ctx.translate(corpse.x, corpse.y); ctx.rotate(corpse.angle);
-      ellipse(ctx, 0, 0, corpse.kind === 'hound' ? 23 : 18, 11, '#202e24aa');
-      ctx.fillStyle = corpse.kind === 'hound' ? '#89775870' : '#90947360';
-      ctx.fillRect(-9, -6, 20, 11); ctx.restore();
-    }
+    if (settings.remains) for (const corpse of this.corpses) this.drawCorpse(corpse);
     if (settings.casings) for (const casing of this.casings) {
       ctx.save();
       ctx.globalAlpha = .16 + .22 * (1 - Math.min(casing.z / 100, 1));
@@ -301,6 +296,13 @@ export class GameRenderer {
       ctx.stroke(); ctx.restore();
     }
     ctx.setTransform(1, 0, 0, 1, 0, 0);
+  }
+
+  drawCorpse(corpse) {
+    const ctx = this.ctx;
+    ctx.save(); ctx.translate(corpse.x, corpse.y); ctx.rotate(corpse.angle);
+    drawFallenActor(ctx, corpse);
+    ctx.restore();
   }
 
   actor(actor, game, settings) {

@@ -2,6 +2,7 @@ import { actorPoint, GROUND_SCALE, HEIGHT_SCALE, SHOT_HEIGHT } from './projectio
 
 const TAU = Math.PI * 2;
 const INK = '#493626';
+const HUNTER = { coat: '#b83d32', shade: '#8e352e', cream: '#e4d4af', boots: '#232821', hat: '#181f1b', hatTop: '#354038', skin: '#cfaa7a' };
 
 /** Smooth, height-aware character art. Coordinates are forward, sideways and up. */
 export function drawActor(ctx, actor, { time, animation, recoil = 0, flash = false, fall = 0 }) {
@@ -99,6 +100,28 @@ export function drawActor(ctx, actor, { time, animation, recoil = 0, flash = fal
     rod([muzzle - 3, 0, z], [muzzle, 0, z], 8, '#26362d', 12);
   }
 
+  function topHat() {
+    const brim = point(-3, 0, 70 + bob);
+    const base = point(-3, 0, 73 + bob);
+    const top = point(-3, 0, 108 + bob);
+    add((base.depth + top.depth) / 2, () => {
+      ctx.strokeStyle = INK; ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.ellipse(brim.x, brim.y, 21, 12, 0, 0, TAU);
+      ctx.fillStyle = colour(HUNTER.hat); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(top.x - 11, top.y);
+      ctx.lineTo(base.x - 11, base.y);
+      ctx.quadraticCurveTo(base.x, base.y + 7, base.x + 11, base.y);
+      ctx.lineTo(top.x + 11, top.y); ctx.closePath();
+      ctx.fillStyle = colour(HUNTER.hat); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(base.x - 10, base.y - 5);
+      ctx.quadraticCurveTo(base.x, base.y, base.x + 10, base.y - 5);
+      ctx.strokeStyle = colour('#59604e'); ctx.lineWidth = 3; ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(top.x, top.y, 11, 5, 0, 0, TAU);
+      ctx.fillStyle = colour(HUNTER.hatTop); ctx.fill();
+      ctx.strokeStyle = INK; ctx.lineWidth = 1.4; ctx.stroke();
+    });
+  }
+
   ctx.save();
   if (fall) { ctx.translate(0, fall * 13); ctx.rotate(fall * .95); }
   if (fox) {
@@ -123,17 +146,19 @@ export function drawActor(ctx, actor, { time, animation, recoil = 0, flash = fal
     gun();
   } else if (actor.kind === 'hunter') {
     for (const side of [-1, 1]) {
-      oval(stride * side * 5, side * 8, 10, 6, 6, 11, '#363c2e');
-      oval(4 + stride * side * 5, side * 8, 3, 9, 6, 3, '#30372b');
+      oval(stride * side * 5, side * 8, 18, 5.5, 5.5, 9, HUNTER.cream);
+      oval(stride * side * 5, side * 8, 8, 5.5, 5.5, 8, HUNTER.boots);
+      oval(4 + stride * side * 5, side * 8, 3, 9, 6, 3, HUNTER.boots);
     }
-    oval(-3, 0, 31 + bob, 13, 17, 21, '#77815b');
-    oval(8, 0, 28 + bob, 6, 13, 13, '#889369', false);
-    oval(0, 0, 55 + bob, 12, 14, 13, '#cfaa7a');
+    oval(-3, 0, 31 + bob, 13, 17, 21, HUNTER.coat);
+    oval(8, 0, 28 + bob, 6, 13, 13, HUNTER.shade, false);
+    oval(12, 0, 43 + bob, 4, 6, 8, HUNTER.cream, false);
+    for (const side of [-1, 1]) rod([13, side * 7, 43 + bob], [14, side * 2, 36 + bob], 2, HUNTER.cream, 3);
+    for (const z of [30, 23]) oval(15, 0, z + bob, 1.4, 1.4, 1.4, HUNTER.cream, false);
+    oval(0, 0, 55 + bob, 12, 14, 13, HUNTER.skin);
     oval(12, 0, 53 + bob, 5, 6, 5, '#d9b687', false);
     for (const side of [-1, 1]) oval(11, side * 6, 58 + bob, 1.5, 2, 2, '#30352b', false);
-    oval(-2, 0, 66 + bob, 17, 22, 3, '#405943');
-    oval(-5, 0, 72 + bob, 11, 15, 8, '#829466');
-    oval(-2, 0, 69 + bob, 12, 15, 2, '#b9a06a', false);
+    topHat();
     gun();
   } else {
     for (const side of [-1, 1]) for (const front of [-1, 1]) {
@@ -153,5 +178,67 @@ export function drawActor(ctx, actor, { time, animation, recoil = 0, flash = fal
   }
   parts.sort((a, b) => a.depth - b.depth);
   for (const part of parts) part.draw();
+  ctx.restore();
+}
+
+/** Static ground-plane art: the caller places and rotates the body; its head faces +X. */
+export function drawFallenActor(ctx, corpse) {
+  const oval = (x, y, rx, ry, fill, outline = true) => {
+    ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, TAU);
+    ctx.fillStyle = fill; ctx.fill();
+    if (outline) { ctx.strokeStyle = INK; ctx.lineWidth = 1.5; ctx.stroke(); }
+  };
+  const limb = (points, width, fill) => {
+    ctx.beginPath(); ctx.moveTo(...points[0]);
+    for (const point of points.slice(1)) ctx.lineTo(...point);
+    ctx.strokeStyle = INK; ctx.lineWidth = width + 2.5; ctx.stroke();
+    ctx.strokeStyle = fill; ctx.lineWidth = width; ctx.stroke();
+  };
+  ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  if (corpse.kind === 'hunter') {
+    for (const side of [-1, 1]) {
+      limb([[-12, side * 6], [-26, side * 11]], 8, '#cbbd9f');
+      limb([[-26, side * 11], [-39, side * 16]], 8, HUNTER.boots);
+      oval(-40, side * 16, 6, 4, HUNTER.boots);
+      limb([[8, side * 8], [1, side * 18], [14, side * 21]], 7, HUNTER.shade);
+      oval(18, side * 21, 5, 3.5, '#b99a73');
+    }
+    ctx.beginPath(); ctx.moveTo(15, -9); ctx.lineTo(14, 9);
+    ctx.lineTo(-15, 11); ctx.lineTo(-20, 4); ctx.lineTo(-16, -11); ctx.closePath();
+    ctx.fillStyle = HUNTER.shade; ctx.fill(); ctx.strokeStyle = INK; ctx.lineWidth = 1.5; ctx.stroke();
+    limb([[-12, -5], [8, -5]], 3, '#ac4c3d');
+    oval(14, 0, 5, 7, '#cbbd9f');
+    oval(24, 0, 10, 8, '#b99a73');
+    oval(33, 1, 4, 3, '#c5a47c');
+    oval(17, -2, 4, 6, '#62523d', false);
+    limb([[26, -3], [29, -3]], 1, '#403b2e');
+    // Dropped rifle and top hat keep the hunter recognisable after the fight.
+    ctx.save(); ctx.translate(5, 25); ctx.rotate(.12);
+    limb([[-15, 0], [-3, 0]], 6, '#826546');
+    limb([[-3, 0], [12, 0]], 5, '#535f55');
+    limb([[12, 0], [35, 0]], 3, '#839084'); ctx.restore();
+    ctx.save(); ctx.translate(34, -23); ctx.rotate(-.3);
+    oval(0, 6, 12, 4, HUNTER.hat);
+    ctx.fillStyle = HUNTER.hat; ctx.fillRect(-7, -10, 14, 16);
+    ctx.strokeStyle = INK; ctx.lineWidth = 1.5; ctx.strokeRect(-7, -10, 14, 16);
+    oval(0, -10, 7, 2.5, HUNTER.hatTop); ctx.restore();
+  } else if (corpse.kind === 'hound') {
+    limb([[-24, -1], [-39, -9], [-49, -6]], 5, '#91764e');
+    for (const side of [-1, 1]) {
+      limb([[-14, side * 7], [-21, side * 19]], 6, '#90764f');
+      limb([[12, side * 7], [19, side * 19]], 6, '#a1885b');
+      oval(-23, side * 20, 7, 3.5, '#67563d');
+      oval(21, side * 20, 7, 3.5, '#67563d');
+    }
+    oval(-3, 0, 26, 12, '#ab9164');
+    oval(-7, -3, 15, 7, '#736044', false);
+    limb([[12, -10], [14, 10]], 5, '#965442');
+    oval(25, -1, 12, 10, '#b89e70');
+    limb([[19, -8], [14, -16]], 7, '#7d6747');
+    limb([[19, 7], [15, 15]], 7, '#7d6747');
+    oval(35, 1, 10, 6, '#c7b088');
+    oval(44, 1, 3.5, 4, '#333b2c');
+    limb([[29, -4], [32, -4]], 1, '#403b2e');
+  }
   ctx.restore();
 }

@@ -60,7 +60,7 @@ The arena fills the window, with a small toolbar and a compact score display. **
 
 There is one player control scheme. Movement and aiming are independent, so you can retreat while firing. Demo is a separate autopilot for comparing effects. Focus stays inside Options while you adjust effects, then returns to the arena when you close it. Juice presets do not change the controls.
 
-Hunters wear green and fire slow rounds after a visible warning. Hounds chase. You have five health points. Avoid contact and bullets; survive and score takedowns. There is one open arena, one weapon and no campaign, upgrades, multiplayer or save system.
+Hunters wear red hunting coats and top hats, and fire slow rounds after a visible warning. Hounds chase. You have five health points. Avoid contact and bullets; survive and score takedowns. There is one open arena, one weapon and no campaign, upgrades, multiplayer or save system.
 
 The arena uses a **45° view**, halfway between overhead and ground level. Rounded characters have visible height, with a larger fox, pointed ears and a bushy cream-tipped tail. Character animation adds an idle wag, a stronger running swish and moving feet. The tilt is part of the baseline presentation: movement, aiming and collisions still use the same flat playfield.
 
@@ -78,7 +78,7 @@ Sound starts only after a user action. The sound checkbox also mutes immediately
 | `src/controls.js` | Player aim/fire input and Demo targeting; no DOM or combat mutation |
 | `src/main.js` | Input, fixed-step scheduling, presets, pause/restart and DOM controls |
 | `src/render.js` | Scene composition, camera, particles and aftermath; separate visual randomness |
-| `src/actors.js` | Rounded character art, directional poses, tail animation and weapons |
+| `src/actors.js` | Living and fallen character art, directional poses, tail animation and weapons |
 | `src/projection.js` | Shared 45° projection and height-aware mouse aiming |
 | `src/audio.js` | Synthesised Web Audio effects; no downloaded sound assets |
 | `src/settings.js` | Effect descriptions, groups, presets and video timestamps |
