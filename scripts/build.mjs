@@ -10,5 +10,9 @@ await cp(new URL('src/', root), new URL('src/', output), {
   recursive: true,
   filter: async source => (await stat(source)).isDirectory() || /\.(?:m?js|css)$/.test(source),
 });
+await cp(new URL('assets/', root), new URL('assets/', output), {
+  recursive: true,
+  filter: async source => (await stat(source)).isDirectory() || /\.(?:png|jpe?g|gif|webp|avif|svg|ico)$/i.test(source),
+});
 
-console.log('Built dist/ with index.html and browser JavaScript/CSS.');
+console.log('Built dist/ with index.html, browser JavaScript/CSS and image assets.');

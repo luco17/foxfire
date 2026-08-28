@@ -28,7 +28,7 @@ The game is designed for a laptop or desktop browser. **No mouse is needed:** pr
 npm run build
 ```
 
-This replaces `dist/` with `index.html` and the browser JavaScript and CSS from `src/`. Tests, documentation, package metadata and the development server are not copied. The build does not bundle or transform the game.
+This replaces `dist/` with `index.html`, the browser JavaScript and CSS from `src/`, and image files from `assets/`, including the 1200 × 630 social preview card. Tests, documentation, package metadata, other asset files and the development server are not copied. The build does not bundle or transform the game.
 
 Connect the GitHub repository through [Cloudflare Pages Git integration](https://developers.cloudflare.com/pages/get-started/git-integration/) and use these settings:
 
